@@ -1,0 +1,73 @@
+{
+    "name": "omnifyjp/omnify-client-laravel-sso",
+    "description": "SSO Client Package for Laravel - Provides Role, Permission and RolePermission models with Omnify schema-driven development",
+    "type": "library",
+    "license": "MIT",
+    "keywords": [
+        "laravel",
+        "sso",
+        "authentication",
+        "authorization",
+        "roles",
+        "permissions",
+        "omnify"
+    ],
+    "authors": [
+        {
+            "name": "Omnify Team",
+            "email": "dev@omnify.jp"
+        }
+    ],
+    "homepage": "https://github.com/omnifyjp/omnify-client-laravel-sso",
+    "require": {
+        "php": "^8.2",
+        "illuminate/support": "^11.0|^12.0",
+        "illuminate/database": "^11.0|^12.0"
+    },
+    "require-dev": {
+        "orchestra/testbench": "^9.0|^10.0",
+        "pestphp/pest": "^3.0",
+        "phpunit/phpunit": "^11.0"
+    },
+    "autoload": {
+        "psr-4": {
+            "Omnify\\SsoClient\\": "src/",
+            "Omnify\\SsoClient\\Database\\Factories\\": "database/factories/"
+        },
+        "files": [
+            "src/helpers.php"
+        ]
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "Omnify\\SsoClient\\Tests\\": "tests/"
+        }
+    },
+    "extra": {
+        "omnify": {
+            "schemas": "database/schemas",
+            "namespace": "Sso",
+            "priority": 50,
+            "options": {
+                "generateMigrations": true,
+                "generateModels": true,
+                "modelNamespace": "Omnify\\SsoClient\\Models",
+                "migrationsPath": "database/migrations/omnify",
+                "factoriesPath": "database/factories"
+            }
+        },
+        "laravel": {
+            "providers": [
+                "Omnify\\SsoClient\\SsoClientServiceProvider"
+            ]
+        }
+    },
+    "config": {
+        "sort-packages": true,
+        "allow-plugins": {
+            "pestphp/pest-plugin": true
+        }
+    },
+    "minimum-stability": "dev",
+    "prefer-stable": true
+}

@@ -1,0 +1,52 @@
+# yaml-language-server: $schema=../../../../../node_modules/.omnify/combined-schema.json
+# SSO Permission Schema
+# Can be used standalone or merged with main Permission.yaml if exists
+
+kind: partial
+target: Permission
+
+displayName:
+  ja: 権限
+  en: Permission
+  vi: Quyền hạn
+
+options:
+  timestamps: true
+
+properties:
+  name:
+    type: String
+    length: 100
+    unique: true
+    displayName:
+      ja: 権限名
+      en: Permission Name
+      vi: Tên quyền
+
+  slug:
+    type: String
+    length: 100
+    unique: true
+    displayName:
+      ja: スラッグ
+      en: Slug
+      vi: Slug
+
+  group:
+    type: String
+    length: 50
+    nullable: true
+    displayName:
+      ja: グループ
+      en: Group
+      vi: Nhóm
+
+  roles:
+    type: Association
+    relation: ManyToMany
+    target: Role
+    joinTable: role_permissions
+    displayName:
+      ja: ロール
+      en: Roles
+      vi: Vai trò

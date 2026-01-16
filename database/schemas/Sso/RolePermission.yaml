@@ -1,0 +1,33 @@
+# yaml-language-server: $schema=../../../../../node_modules/.omnify/combined-schema.json
+# Role-Permission pivot table
+
+kind: partial
+target: RolePermission
+
+displayName:
+  ja: ロール権限
+  en: Role Permission
+  vi: Quyền vai trò
+
+options:
+  timestamps: true
+  tableName: role_permissions
+
+properties:
+  role:
+    type: Association
+    relation: ManyToOne
+    target: Role
+    displayName:
+      ja: ロール
+      en: Role
+      vi: Vai trò
+
+  permission:
+    type: Association
+    relation: ManyToOne
+    target: Permission
+    displayName:
+      ja: 権限
+      en: Permission
+      vi: Quyền hạn

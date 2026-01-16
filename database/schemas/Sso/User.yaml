@@ -1,0 +1,121 @@
+# yaml-language-server: $schema=../../../../../node_modules/.omnify/combined-schema.json
+# SSO User Schema - Complete User schema for SSO integration
+# Can be used standalone or merged with main User.yaml if exists
+
+kind: partial
+target: User
+priority: 10 # High priority - merged first into User schema
+
+displayName:
+  ja: ユーザー
+  en: User
+  vi: Người dùng
+
+options:
+  timestamps: true
+
+properties:
+  # Basic auth fields
+  name:
+    type: String
+    displayName:
+      ja: 名前
+      en: Name
+      vi: Tên
+
+  email:
+    type: String
+    unique: true
+    displayName:
+      ja: メールアドレス
+      en: Email
+      vi: Email
+
+  email_verified_at:
+    type: Timestamp
+    nullable: true
+    displayName:
+      ja: メール確認日時
+      en: Email Verified At
+      vi: Ngày xác thực email
+
+  password:
+    type: String
+    displayName:
+      ja: パスワード
+      en: Password
+      vi: Mật khẩu
+
+  remember_token:
+    type: String
+    length: 100
+    nullable: true
+    displayName:
+      ja: リメンバートークン
+      en: Remember Token
+      vi: Token ghi nhớ
+
+  # SSO fields
+  console_user_id:
+    type: BigInt
+    unsigned: true
+    unique: true
+    nullable: true
+    displayName:
+      ja: Console User ID
+      en: Console User ID
+      vi: Console User ID
+    description:
+      ja: Console側のユーザーID
+      en: User ID from Console SSO
+      vi: ID người dùng từ Console SSO
+
+  console_access_token:
+    type: Text
+    nullable: true
+    displayName:
+      ja: Console Access Token
+      en: Console Access Token
+      vi: Console Access Token
+    description:
+      ja: Console APIアクセス用トークン（暗号化）
+      en: Encrypted token for Console API access
+      vi: Token mã hóa để truy cập Console API
+
+  console_refresh_token:
+    type: Text
+    nullable: true
+    displayName:
+      ja: Console Refresh Token
+      en: Console Refresh Token
+      vi: Console Refresh Token
+    description:
+      ja: トークン更新用リフレッシュトークン（暗号化）
+      en: Encrypted refresh token for token renewal
+      vi: Token làm mới mã hóa
+
+  console_token_expires_at:
+    type: Timestamp
+    nullable: true
+    displayName:
+      ja: Console Token有効期限
+      en: Console Token Expiry
+      vi: Hạn Token Console
+    description:
+      ja: アクセストークンの有効期限
+      en: Access token expiration time
+      vi: Thời gian hết hạn của token truy cập
+
+  role:
+    type: Association
+    relation: ManyToOne
+    target: Role
+    nullable: true
+    displayName:
+      ja: ロール
+      en: Role
+      vi: Vai trò
+    description:
+      ja: ユーザーのグローバルロール
+      en: User's global role
+      vi: Vai trò toàn cục của người dùng
