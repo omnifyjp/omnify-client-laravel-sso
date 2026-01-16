@@ -11,6 +11,8 @@ Laravel package for Single Sign-On (SSO) integration with Omnify Console, featur
 - **Logging** - Dedicated log channel for audit trails
 - **Multi-language** - i18n support for all model labels
 - **API Ready** - RESTful admin endpoints with OpenAPI documentation
+- **Omnify Auto-Discovery** - Automatically discovers all Omnify packages for CLI
+- **Auto-Discovery** - Composer plugin for automatic Omnify package discovery
 
 ## Requirements
 
@@ -152,6 +154,56 @@ sso_log()->info('Custom event', ['user_id' => $user->id]);
 // - JWT verification
 // - Security events
 // - API errors
+```
+
+## Omnify Auto-Discovery
+
+This package includes a Composer plugin that automatically discovers all Omnify-enabled packages in your project.
+
+### How It Works
+
+After `composer install` or `composer update`, the plugin scans all installed packages for `extra.omnify` configuration and generates `.omnify-packages.json`:
+
+```json
+{
+    "version": 1,
+    "packages": {
+        "omnifyjp/omnify-client-laravel-sso": {
+            "schemas": "/path/to/vendor/omnifyjp/omnify-client-laravel-sso/database/schemas",
+            "namespace": "Sso",
+            "priority": 50
+        }
+    }
+}
+```
+
+### Usage with Omnify CLI
+
+The Omnify CLI automatically reads this manifest:
+
+```bash
+npx omnify generate
+# Output: Auto-discovered 1 package(s) from .omnify-packages.json
+```
+
+### Creating Omnify-Enabled Packages
+
+To make your package discoverable, add `extra.omnify` to your `composer.json`:
+
+```json
+{
+    "extra": {
+        "omnify": {
+            "schemas": "database/schemas",
+            "namespace": "YourPackage",
+            "priority": 100,
+            "options": {
+                "modelNamespace": "Vendor\\YourPackage\\Models",
+                "generateMigrations": false
+            }
+        }
+    }
+}
 ```
 
 ## Package Structure

@@ -1,7 +1,7 @@
 {
     "name": "omnifyjp/omnify-client-laravel-sso",
     "description": "SSO Client Package for Laravel - Provides Role, Permission and RolePermission models with Omnify schema-driven development",
-    "type": "library",
+    "type": "composer-plugin",
     "license": "MIT",
     "keywords": [
         "laravel",
@@ -10,7 +10,9 @@
         "authorization",
         "roles",
         "permissions",
-        "omnify"
+        "omnify",
+        "composer-plugin",
+        "auto-discovery"
     ],
     "authors": [
         {
@@ -21,10 +23,12 @@
     "homepage": "https://github.com/omnifyjp/omnify-client-laravel-sso",
     "require": {
         "php": "^8.2",
+        "composer-plugin-api": "^2.0",
         "illuminate/support": "^11.0|^12.0",
         "illuminate/database": "^11.0|^12.0"
     },
     "require-dev": {
+        "composer/composer": "^2.0",
         "orchestra/testbench": "^9.0|^10.0",
         "pestphp/pest": "^3.0",
         "phpunit/phpunit": "^11.0"
@@ -44,6 +48,7 @@
         }
     },
     "extra": {
+        "class": "Omnify\\SsoClient\\Composer\\OmnifyDiscoveryPlugin",
         "omnify": {
             "schemas": "database/schemas",
             "namespace": "Sso",
