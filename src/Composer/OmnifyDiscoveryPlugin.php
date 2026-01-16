@@ -38,8 +38,9 @@ class OmnifyDiscoveryPlugin implements PluginInterface, EventSubscriberInterface
 
     public function uninstall(Composer $composer, IOInterface $io): void
     {
-        // Optionally remove manifest file
-        $manifestPath = getcwd() . '/' . self::MANIFEST_FILENAME;
+        // Remove manifest file from project root
+        $projectRoot = $this->findProjectRoot();
+        $manifestPath = $projectRoot . '/' . self::MANIFEST_FILENAME;
         if (file_exists($manifestPath)) {
             @unlink($manifestPath);
         }
@@ -69,6 +70,10 @@ class OmnifyDiscoveryPlugin implements PluginInterface, EventSubscriberInterface
             return;
         }
 
+        // Find project root (where omnify.config.ts is located)
+        $projectRoot = $this->findProjectRoot();
+        $outputPath = $projectRoot . '/' . self::MANIFEST_FILENAME;
+
         $manifest = [
             '$schema' => 'https://omnify.dev/schemas/packages.json',
             'version' => self::MANIFEST_VERSION,
@@ -76,7 +81,6 @@ class OmnifyDiscoveryPlugin implements PluginInterface, EventSubscriberInterface
             'packages' => $packages,
         ];
 
-        $outputPath = getcwd() . '/' . self::MANIFEST_FILENAME;
         $json = json_encode($manifest, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES);
 
         if ($json === false) {
@@ -86,11 +90,50 @@ class OmnifyDiscoveryPlugin implements PluginInterface, EventSubscriberInterface
 
         file_put_contents($outputPath, $json);
 
+        $relativePath = $projectRoot === getcwd() 
+            ? self::MANIFEST_FILENAME 
+            : str_replace(getcwd() . '/', '', $outputPath);
+
         $this->io->write(sprintf(
             '<info>Omnify: Found %d package(s), wrote %s</info>',
             count($packages),
-            self::MANIFEST_FILENAME
+            $relativePath
         ));
+    }
+
+    /**
+     * Find the project root directory.
+     * Looks for omnify.config.ts in current and parent directories.
+     */
+    private function findProjectRoot(): string
+    {
+        $cwd = getcwd();
+        $dir = $cwd;
+
+        // Check current dir and up to 3 parent levels
+        for ($i = 0; $i < 4; $i++) {
+            // Check for omnify config files
+            $configFiles = [
+                'omnify.config.ts',
+                'omnify.config.js',
+                'omnify.config.mjs',
+            ];
+
+            foreach ($configFiles as $configFile) {
+                if (file_exists($dir . '/' . $configFile)) {
+                    return $dir;
+                }
+            }
+
+            $parent = dirname($dir);
+            if ($parent === $dir) {
+                break; // Reached filesystem root
+            }
+            $dir = $parent;
+        }
+
+        // Default to current working directory
+        return $cwd;
     }
 
     /**
@@ -194,7 +237,8 @@ class OmnifyDiscoveryPlugin implements PluginInterface, EventSubscriberInterface
      */
     private function removeManifestIfExists(): void
     {
-        $manifestPath = getcwd() . '/' . self::MANIFEST_FILENAME;
+        $projectRoot = $this->findProjectRoot();
+        $manifestPath = $projectRoot . '/' . self::MANIFEST_FILENAME;
         if (file_exists($manifestPath)) {
             @unlink($manifestPath);
         }
