@@ -12,6 +12,14 @@ php artisan vendor:publish --tag=sso-client-config
 
 This creates `config/sso-client.php`.
 
+## ServiceInstance Architecture Note
+
+With Console's ServiceInstance architecture:
+- **Service side only needs `service_slug`** - no `client_id`/`client_secret` required
+- Console manages credentials per-organization through ServiceInstance
+- Each organization can have multiple instances (production, staging, etc.)
+- **Organization and Service IDs are UUIDs** - the package supports both UUID strings and legacy int IDs
+
 ## Environment Variables
 
 ### Required
@@ -20,6 +28,8 @@ This creates `config/sso-client.php`.
 | ------------------ | ----------------------------- | ------------------ |
 | `SSO_CONSOLE_URL`  | Omnify Console URL            | `http://auth.test` |
 | `SSO_SERVICE_SLUG` | Service identifier in Console | `boilerplate`      |
+
+> **Note:** No `SSO_CLIENT_ID` or `SSO_CLIENT_SECRET` needed. Console manages these per-organization via ServiceInstance.
 
 ### Optional
 

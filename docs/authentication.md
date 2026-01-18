@@ -1,5 +1,36 @@
 # Authentication Guide
 
+## ServiceInstance Architecture
+
+Omnify Console uses a **ServiceInstance** architecture for multi-tenant, multi-environment deployments:
+
+```
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                              SERVICE (Global)                                │
+│   slug: "your-service"                                                       │
+│   default_redirect_uris: ["https://your-service.com/*"]                      │
+└─────────────────────────────────────────────────────────────────────────────┘
+                                        │
+                                        │ 1:N
+                        ┌───────────────┼───────────────┐
+                        ▼               ▼               ▼
+┌──────────────────────────┐ ┌──────────────────────────┐ ┌──────────────────────────┐
+│    ServiceInstance       │ │    ServiceInstance       │ │    ServiceInstance       │
+│    (Org A - Production)  │ │    (Org A - Staging)     │ │    (Org B - Production)  │
+├──────────────────────────┤ ├──────────────────────────┤ ├──────────────────────────┤
+│ client_id: si_abc123     │ │ client_id: si_abc456     │ │ client_id: si_xyz789     │
+│ environment: production  │ │ environment: staging     │ │ environment: production  │
+│ allowed_redirect_uris:   │ │ allowed_redirect_uris:   │ │ allowed_redirect_uris:   │
+│   (uses service default) │ │   ["https://stg.*.com/*"]│ │   ["https://orgb.com/*"] │
+└──────────────────────────┘ └──────────────────────────┘ └──────────────────────────┘
+```
+
+**Key Points:**
+- Your service only needs the `service_slug` - no client credentials required
+- Console manages credentials per-organization via ServiceInstance
+- Each organization can have multiple instances (production, staging, etc.)
+- Redirect URIs are validated against instance-specific or service default URIs
+
 ## SSO Flow Overview
 
 ```
@@ -19,11 +50,12 @@
                                                         │                 │
                                                         └─────────────────┘
 
-1. User clicks login → Redirect to Console
+1. User clicks login → Redirect to Console with service_slug
 2. User authenticates at Console
-3. Console redirects back with authorization code
-4. Frontend sends code to backend API
-5. Backend exchanges code for tokens, creates session
+3. Console finds ServiceInstance for user's org, validates redirect_uri
+4. Console redirects back with authorization code
+5. Frontend sends code to backend API
+6. Backend exchanges code for tokens using service_slug
 ```
 
 ## Step 1: Initiate Login (Frontend)

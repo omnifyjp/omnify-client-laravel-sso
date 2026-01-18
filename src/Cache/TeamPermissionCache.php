@@ -16,10 +16,11 @@ class TeamPermissionCache
      * Note: TeamPermission model uses SoftDeletes trait,
      * so soft-deleted records are automatically excluded.
      *
-     * @param array<int> $teamIds
+     * @param  array<int>  $teamIds
+     * @param  string|int  $orgId  Organization ID (UUID string or int for legacy)
      * @return array<string>
      */
-    public static function getForTeams(array $teamIds, int $orgId): array
+    public static function getForTeams(array $teamIds, string|int $orgId): array
     {
         if (empty($teamIds)) {
             return [];
@@ -43,8 +44,10 @@ class TeamPermissionCache
 
     /**
      * Clear cache for a specific team.
+     *
+     * @param  string|int  $orgId  Organization ID (UUID string or int for legacy)
      */
-    public static function clearForTeam(int $teamId, int $orgId): void
+    public static function clearForTeam(int $teamId, string|int $orgId): void
     {
         // Since we use a composite key with all team IDs, we need to clear all caches for this org
         // In production, consider using cache tags for more granular control
@@ -53,8 +56,10 @@ class TeamPermissionCache
 
     /**
      * Clear all team permission caches for an organization.
+     *
+     * @param  string|int  $orgId  Organization ID (UUID string or int for legacy)
      */
-    public static function clearForOrg(int $orgId): void
+    public static function clearForOrg(string|int $orgId): void
     {
         // Get all distinct team combinations for this org
         // This is a simplified approach - in production use cache tags

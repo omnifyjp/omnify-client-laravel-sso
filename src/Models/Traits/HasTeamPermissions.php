@@ -21,9 +21,10 @@ trait HasTeamPermissions
     /**
      * Get all permissions for user (role + teams).
      *
+     * @param  string|int|null  $orgId  Organization ID (UUID string or int for legacy)
      * @return array<string>
      */
-    public function getAllPermissions(?int $orgId = null): array
+    public function getAllPermissions(string|int|null $orgId = null): array
     {
         $orgId = $orgId ?? session('current_org_id');
 
@@ -57,9 +58,10 @@ trait HasTeamPermissions
     /**
      * Get team permissions for user in organization.
      *
+     * @param  string|int  $orgId  Organization ID (UUID string or int for legacy)
      * @return array<string>
      */
-    public function getTeamPermissions(int $orgId): array
+    public function getTeamPermissions(string|int $orgId): array
     {
         $teams = $this->getConsoleTeams($orgId);
 
@@ -74,8 +76,10 @@ trait HasTeamPermissions
 
     /**
      * Check if user has a specific permission (via role OR team).
+     *
+     * @param  string|int|null  $orgId  Organization ID (UUID string or int for legacy)
      */
-    public function hasPermission(string $permission, ?int $orgId = null): bool
+    public function hasPermission(string $permission, string|int|null $orgId = null): bool
     {
         return in_array($permission, $this->getAllPermissions($orgId), true);
     }
@@ -83,9 +87,10 @@ trait HasTeamPermissions
     /**
      * Check if user has any of the given permissions.
      *
-     * @param array<string> $permissions
+     * @param  array<string>  $permissions
+     * @param  string|int|null  $orgId  Organization ID (UUID string or int for legacy)
      */
-    public function hasAnyPermission(array $permissions, ?int $orgId = null): bool
+    public function hasAnyPermission(array $permissions, string|int|null $orgId = null): bool
     {
         $userPermissions = $this->getAllPermissions($orgId);
 
@@ -101,9 +106,10 @@ trait HasTeamPermissions
     /**
      * Check if user has all of the given permissions.
      *
-     * @param array<string> $permissions
+     * @param  array<string>  $permissions
+     * @param  string|int|null  $orgId  Organization ID (UUID string or int for legacy)
      */
-    public function hasAllPermissions(array $permissions, ?int $orgId = null): bool
+    public function hasAllPermissions(array $permissions, string|int|null $orgId = null): bool
     {
         $userPermissions = $this->getAllPermissions($orgId);
 
@@ -119,9 +125,10 @@ trait HasTeamPermissions
     /**
      * Get user's teams from Console (cached).
      *
+     * @param  string|int  $orgId  Organization ID (UUID string or int for legacy)
      * @return array<array{id: int, name: string, path: string|null, parent_id: int|null, is_leader: bool}>
      */
-    public function getConsoleTeams(int $orgId): array
+    public function getConsoleTeams(string|int $orgId): array
     {
         $cacheKey = "sso:user_teams:{$this->id}:{$orgId}";
 
@@ -142,8 +149,10 @@ trait HasTeamPermissions
 
     /**
      * Clear permission cache for user.
+     *
+     * @param  string|int|null  $orgId  Organization ID (UUID string or int for legacy)
      */
-    public function clearPermissionCache(?int $orgId = null): void
+    public function clearPermissionCache(string|int|null $orgId = null): void
     {
         if ($orgId) {
             Cache::forget("sso:user_teams:{$this->id}:{$orgId}");
@@ -153,8 +162,10 @@ trait HasTeamPermissions
     /**
      * Get organization slug by ID.
      * Override this method if you have a different way to resolve org slug.
+     *
+     * @param  string|int  $orgId  Organization ID (UUID string or int for legacy)
      */
-    protected function getOrgSlugById(int $orgId): ?string
+    protected function getOrgSlugById(string|int $orgId): ?string
     {
         // Try to get from session
         $orgSlug = session('current_org_slug');

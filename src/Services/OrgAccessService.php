@@ -20,7 +20,7 @@ class OrgAccessService
     /**
      * Check if user has access to organization.
      *
-     * @return array{organization_id: int, organization_slug: string, org_role: string, service_role: string|null, service_role_level: int}|null
+     * @return array{organization_id: string, organization_slug: string, org_role: string, service_role: string|null, service_role_level: int}|null
      */
     public function checkAccess(Model $user, string $orgSlug): ?array
     {
@@ -44,7 +44,7 @@ class OrgAccessService
     /**
      * Get all organizations user has access to.
      *
-     * @return array<array{organization_id: int, organization_slug: string, organization_name: string, org_role: string, service_role: string|null}>
+     * @return array<array{organization_id: string, organization_slug: string, organization_name: string, org_role: string, service_role: string|null}>
      */
     public function getOrganizations(Model $user): array
     {

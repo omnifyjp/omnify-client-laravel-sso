@@ -49,6 +49,9 @@ SSO_ALLOWED_REDIRECT_HOSTS=example.com,*.example.com
 SSO_REQUIRE_HTTPS_REDIRECTS=true
 ```
 
+> **Note:** No `client_id`/`client_secret` required on the service side.
+> Console manages credentials per-organization through ServiceInstance architecture.
+
 ## Step 4: Run Migrations
 
 ```bash

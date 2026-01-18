@@ -81,7 +81,7 @@ class ConsoleApiService
     /**
      * Get user authorization for organization.
      *
-     * @return array{organization_id: int, organization_slug: string, org_role: string, service_role: string|null, service_role_level: int}|null
+     * @return array{organization_id: string, organization_slug: string, org_role: string, service_role: string|null, service_role_level: int}|null
      */
     public function getAccess(string $accessToken, string $orgSlug): ?array
     {
@@ -106,7 +106,7 @@ class ConsoleApiService
     /**
      * Get organizations user has access to.
      *
-     * @return array<array{organization_id: int, organization_slug: string, organization_name: string, org_role: string, service_role: string|null}>
+     * @return array<array{organization_id: string, organization_slug: string, organization_name: string, org_role: string, service_role: string|null}>
      */
     public function getOrganizations(string $accessToken): array
     {

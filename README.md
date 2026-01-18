@@ -5,6 +5,7 @@ Laravel package for Single Sign-On (SSO) integration with Omnify Console, featur
 ## Features
 
 - **SSO Authentication** - JWT-based authentication with Omnify Console
+- **ServiceInstance Support** - Supports Console's multi-instance architecture
 - **Role-Based Access Control (RBAC)** - Flexible role and permission management
 - **Team Permissions** - Organization-level permission management
 - **Security** - Open redirect protection, input validation, rate limiting ready
@@ -12,7 +13,25 @@ Laravel package for Single Sign-On (SSO) integration with Omnify Console, featur
 - **Multi-language** - i18n support for all model labels
 - **API Ready** - RESTful admin endpoints with OpenAPI documentation
 - **Omnify Auto-Discovery** - Automatically discovers all Omnify packages for CLI
-- **Auto-Discovery** - Composer plugin for automatic Omnify package discovery
+
+## Architecture
+
+This package integrates with Omnify Console's **ServiceInstance** architecture:
+
+```
+Console (SSO Provider)                    Your Service (SSO Client)
+┌─────────────────────────────┐          ┌─────────────────────────┐
+│ Service: "your-service"     │          │                         │
+│                             │          │  Uses: service_slug     │
+│ ServiceInstance (per-org):  │◀────────▶│  JWT verification       │
+│   - client_id               │          │  Org-based access       │
+│   - client_secret           │          │                         │
+│   - environment             │          │                         │
+│   - allowed_redirect_uris   │          │                         │
+└─────────────────────────────┘          └─────────────────────────┘
+```
+
+> **Note:** Your service only needs the `service_slug`. Console manages `client_id`/`client_secret` per organization through ServiceInstance.
 
 ## Requirements
 
@@ -39,6 +58,8 @@ SSO_SERVICE_SLUG=your-service-slug
 SSO_LOG_CHANNEL=sso
 SSO_LOGGING_ENABLED=true
 ```
+
+> **Note:** No `client_id`/`client_secret` required on service side. Console manages credentials per-organization via ServiceInstance.
 
 ### 3. Run Migrations
 
