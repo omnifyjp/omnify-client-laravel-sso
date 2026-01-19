@@ -81,7 +81,7 @@ class ConsoleApiService
     /**
      * Get user authorization for organization.
      *
-     * @return array{organization_id: string, organization_slug: string, org_role: string, service_role: string|null, service_role_level: int}|null
+     * @return array{organization_id: string, organization_slug: string, org_role: string, service_role: string|null, service_role_level: int, all_branches_access: bool, branch_count: int, primary_branch: array{id: int, code: string, name: string}|null}|null
      */
     public function getAccess(string $accessToken, string $orgSlug): ?array
     {
@@ -146,6 +146,31 @@ class ConsoleApiService
         }
 
         return $response->json('teams') ?? [];
+    }
+
+    /**
+     * Get user's branches in organization.
+     *
+     * @return array{all_branches_access: bool, branches: array<array{id: int, code: string, name: string, is_headquarters: bool, is_primary: bool, is_assigned: bool, access_type: string, timezone: string|null, currency: string|null, locale: string|null}>, primary_branch_id: int|null, organization: array{id: string, slug: string, name: string}}|null
+     */
+    public function getUserBranches(string $accessToken, string $orgSlug): ?array
+    {
+        $response = $this->request()
+            ->withToken($accessToken)
+            ->get("{$this->consoleUrl}/api/sso/branches", [
+                'organization_slug' => $orgSlug,
+            ]);
+
+        if (! $response->successful()) {
+            if ($response->status() === 403 || $response->status() === 404) {
+                return null;
+            }
+            $this->handleError($response->status(), $response->json());
+
+            return null;
+        }
+
+        return $response->json();
     }
 
     /**

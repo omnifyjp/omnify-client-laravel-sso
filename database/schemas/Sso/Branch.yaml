@@ -1,0 +1,41 @@
+# Branch - cached from Console API
+kind: partial
+target: Branch
+
+displayName:
+  ja: 支店
+  en: Branch
+
+options:
+  timestamps: true
+  softDelete: true
+  indexes:
+    - columns: [console_org_id]
+    - columns: [console_org_id, code]
+      unique: true
+
+properties:
+  console_branch_id:
+    type: BigInt
+    unsigned: true
+    unique: true
+
+  console_org_id:
+    type: BigInt
+    unsigned: true
+
+  code:
+    type: String
+    length: 20
+
+  name:
+    type: String
+    length: 100
+
+  is_headquarters:
+    type: Boolean
+    default: false
+
+  is_active:
+    type: Boolean
+    default: true
