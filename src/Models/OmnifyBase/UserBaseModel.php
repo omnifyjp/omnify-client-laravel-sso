@@ -20,6 +20,7 @@ use Illuminate\Database\Eloquent\Relations\MorphToMany;
 use Illuminate\Database\Eloquent\Collection as EloquentCollection;
 use Omnify\SsoClient\Models\OmnifyBase\Traits\HasLocalizedDisplayName;
 use Omnify\SsoClient\Models\OmnifyBase\Locales\UserLocales;
+use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Omnify\SsoClient\Models\Role;
 
 /**
@@ -27,20 +28,16 @@ use Omnify\SsoClient\Models\Role;
  *
  * @property string $name
  * @property string $email
- * @property \Carbon\Carbon|null $email_verified_at
- * @property string $password
- * @property string|null $remember_token
- * @property int|null $console_user_id
+ * @property mixed $console_user_id
  * @property string|null $console_access_token
  * @property string|null $console_refresh_token
  * @property \Carbon\Carbon|null $console_token_expires_at
- * @property Role|null $role
- * @property int|null $role_id
+ * @property \Illuminate\Database\Eloquent\Collection<Role> $roles
  */
 class UserBaseModel extends BaseModel
 {
     use HasLocalizedDisplayName;
-
+    use HasUuids;
     /**
      * The table associated with the model.
      */
@@ -51,6 +48,16 @@ class UserBaseModel extends BaseModel
      */
     protected $primaryKey = 'id';
 
+    /**
+     * The "type" of the primary key ID.
+     */
+    protected $keyType = 'string';
+
+
+    /**
+     * Indicates if the IDs are auto-incrementing.
+     */
+    public $incrementing = false;
 
 
     /**
@@ -78,14 +85,10 @@ class UserBaseModel extends BaseModel
     protected $fillable = [
         'name',
         'email',
-        'email_verified_at',
-        'password',
-        'remember_token',
         'console_user_id',
         'console_access_token',
         'console_refresh_token',
         'console_token_expires_at',
-        'role_id',
     ];
 
     /**
@@ -108,17 +111,16 @@ class UserBaseModel extends BaseModel
     protected function casts(): array
     {
         return [
-            'email_verified_at' => 'datetime',
-            'console_user_id' => 'integer',
             'console_token_expires_at' => 'datetime',
         ];
     }
 
     /**
-     * Get the role that owns this model.
+     * The roles that belong to this model.
      */
-    public function role(): BelongsTo
+    public function roles(): BelongsToMany
     {
-        return $this->belongsTo(Role::class, 'role_id');
+        return $this->belongsToMany(Role::class, 'role_user')
+            ->withTimestamps();
     }
 }

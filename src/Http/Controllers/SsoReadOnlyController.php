@@ -70,7 +70,7 @@ class SsoReadOnlyController extends Controller
                 in: 'path',
                 required: true,
                 description: 'Role ID',
-                schema: new OA\Schema(type: 'integer')
+                schema: new OA\Schema(type: 'string', format: 'uuid')
             ),
         ],
         responses: [
@@ -87,7 +87,7 @@ class SsoReadOnlyController extends Controller
             new OA\Response(response: 404, description: 'Role not found'),
         ]
     )]
-    public function role(int $id): JsonResponse
+    public function role(string $id): JsonResponse
     {
         $role = Role::with('permissions')->findOrFail($id);
 

@@ -1,0 +1,125 @@
+---
+description: "User-editable API resources. MUST read corresponding BaseResource before editing to avoid duplicating auto-generated field mappings."
+globs: ["app/Http/Resources/*.php"]
+alwaysApply: true
+---
+
+# Resource Editing Rules
+
+These are **user-editable** resource files that extend auto-generated BaseResources.
+
+## ⚠️ BEFORE EDITING - MANDATORY STEPS
+
+### 1. Read the BaseResource First
+
+Before editing `PostResource.php`, you **MUST** read `OmnifyBase/PostResourceBase.php` to understand:
+- What fields are already mapped
+- What relations are included
+- How timestamps are formatted
+
+### 2. Check for Existing Fields
+
+If a field exists in BaseResource, **DO NOT** duplicate it here.
+
+## ❌ NEVER DUPLICATE
+
+```php
+// These are ALREADY in BaseResource - NEVER recreate!
+'id' => $this->id,                    // ❌ From schema
+'title' => $this->title,              // ❌ From schema
+'author' => UserResource::make(...),  // ❌ From association
+'created_at' => $this->created_at,    // ❌ Auto-included
+```
+
+## ✅ ONLY ADD Custom Fields
+
+```php
+class PostResource extends PostResourceBase
+{
+    public function toArray($request): array
+    {
+        return array_merge(parent::toArray($request), [
+            // ✅ Computed fields
+            'read_time' => $this->getReadTimeInMinutes(),
+            'word_count' => str_word_count($this->content ?? ''),
+            
+            // ✅ Derived boolean flags
+            'is_published' => $this->status === 'published',
+            'is_featured' => !empty($this->featured_image),
+            
+            // ✅ Formatted data
+            'excerpt_html' => Str::markdown($this->excerpt ?? ''),
+            
+            // ✅ Conditional fields
+            'edit_url' => $this->when(
+                $request->user()?->can('update', $this->resource),
+                route('posts.edit', $this->id)
+            ),
+            
+            // ✅ Aggregated data
+            'comments_count' => $this->whenCounted('comments'),
+            
+            // ✅ Custom relations not in schema
+            'related_posts' => PostResource::collection(
+                $this->whenLoaded('relatedPosts')
+            ),
+        ]);
+    }
+}
+```
+
+## Common Patterns
+
+### Conditional Fields Based on User
+
+```php
+return array_merge(parent::toArray($request), [
+    // Only show to admins
+    'internal_notes' => $this->when(
+        $request->user()?->isAdmin(),
+        $this->internal_notes
+    ),
+]);
+```
+
+### Nested Resource Customization
+
+```php
+return array_merge(parent::toArray($request), [
+    // Override relation resource
+    'author' => $this->whenLoaded('author', function () {
+        return [
+            'id' => $this->author->id,
+            'name' => $this->author->name,
+            // Custom: only include essential fields
+        ];
+    }),
+]);
+```
+
+### Collection Resources
+
+```php
+class PostCollection extends ResourceCollection
+{
+    public function toArray($request): array
+    {
+        return [
+            'data' => $this->collection,
+            // ✅ Add metadata
+            'meta' => [
+                'total_published' => $this->collection->where('status', 'published')->count(),
+            ],
+        ];
+    }
+}
+```
+
+## Quick Checklist Before Saving
+
+- [ ] Read `OmnifyBase/{Resource}Base.php` first
+- [ ] Not duplicating fields from BaseResource
+- [ ] Using `array_merge(parent::toArray($request), [...])` pattern
+- [ ] Only adding computed/custom fields
+- [ ] Using `$this->when()` for conditional fields
+- [ ] Using `$this->whenLoaded()` for optional relations

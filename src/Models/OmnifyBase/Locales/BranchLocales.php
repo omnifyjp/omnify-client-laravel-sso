@@ -20,6 +20,7 @@ class BranchLocales
     public const DISPLAY_NAMES = [
         'ja' => '支店',
         'en' => 'Branch',
+        'vi' => 'Chi nhánh',
     ];
 
     /**
@@ -28,6 +29,25 @@ class BranchLocales
      * @var array<string, array<string, string>>
      */
     public const PROPERTY_DISPLAY_NAMES = [
-
+        'console_branch_id' => [
+            'ja' => 'Console Branch ID',
+            'en' => 'Console Branch ID',
+            'vi' => 'Console Branch ID',
+        ],
+        'console_org_id' => [
+            'ja' => 'Console Organization ID',
+            'en' => 'Console Organization ID',
+            'vi' => 'Console Organization ID',
+        ],
+        'code' => [
+            'ja' => '支店コード',
+            'en' => 'Branch Code',
+            'vi' => 'Mã chi nhánh',
+        ],
+        'name' => [
+            'ja' => '支店名',
+            'en' => 'Branch Name',
+            'vi' => 'Tên chi nhánh',
+        ],
     ];
 }

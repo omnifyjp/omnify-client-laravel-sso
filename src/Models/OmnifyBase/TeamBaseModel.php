@@ -20,19 +20,21 @@ use Illuminate\Database\Eloquent\Relations\MorphToMany;
 use Illuminate\Database\Eloquent\Collection as EloquentCollection;
 use Omnify\SsoClient\Models\OmnifyBase\Traits\HasLocalizedDisplayName;
 use Omnify\SsoClient\Models\OmnifyBase\Locales\TeamLocales;
+use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
 /**
  * TeamBaseModel
  *
- * @property int $console_team_id
- * @property int $console_org_id
+ * @property mixed $console_team_id
+ * @property mixed $console_org_id
  * @property string $name
  */
 class TeamBaseModel extends BaseModel
 {
     use HasLocalizedDisplayName;
     use SoftDeletes;
+    use HasUuids;
     /**
      * The table associated with the model.
      */
@@ -43,6 +45,16 @@ class TeamBaseModel extends BaseModel
      */
     protected $primaryKey = 'id';
 
+    /**
+     * The "type" of the primary key ID.
+     */
+    protected $keyType = 'string';
+
+
+    /**
+     * Indicates if the IDs are auto-incrementing.
+     */
+    public $incrementing = false;
 
 
     /**
@@ -93,8 +105,7 @@ class TeamBaseModel extends BaseModel
     protected function casts(): array
     {
         return [
-            'console_team_id' => 'integer',
-            'console_org_id' => 'integer',
+
         ];
     }
 

@@ -1,0 +1,292 @@
+---
+description: "React form development with Ant Design + Zod validation. Covers form instances, zodRule helper, Japanese compound fields (JapaneseName, JapaneseAddress), and backend 422 error handling. Apply when creating forms."
+globs: ["resources/ts/**/*Form*.tsx", "resources/ts/**/*form*.tsx"]
+alwaysApply: false
+---
+
+# Form Development Guide
+
+## Imports
+
+```tsx
+// Runtime utilities from @famgia/omnify-react
+import {
+  zodRule,
+  setZodLocale,
+  JapaneseNameField,
+  JapaneseAddressField,
+  JapaneseBankField,
+  useFormMutation,
+} from '@famgia/omnify-react';
+
+// Generated schemas from .omnify/
+import {
+  customerSchemas,
+  customerI18n,
+  getCustomerFieldLabel,
+  getCustomerFieldPlaceholder,
+  type CustomerCreate,
+} from './.omnify/schemas';
+```
+
+## Quick Start
+
+```tsx
+import { Form, Input, Button, Space, Card, Divider } from 'antd';
+import type { FormInstance } from 'antd';
+import { zodRule, setZodLocale, JapaneseNameField } from '@famgia/omnify-react';
+import {
+  type Customer,
+  type CustomerCreate,
+  customerSchemas,
+  customerI18n,
+  getCustomerFieldLabel,
+  getCustomerFieldPlaceholder,
+} from './.omnify/schemas';
+
+const LOCALE = 'ja'; // TODO: Get from context
+
+export function CustomerForm({
+  form,
+  initialValues,
+  onSubmit,
+  loading = false,
+  isEdit = false,
+  onCancel,
+}: {
+  form: FormInstance<CustomerCreate>;
+  initialValues?: Partial<Customer>;
+  onSubmit: (values: CustomerCreate) => void;
+  loading?: boolean;
+  isEdit?: boolean;
+  onCancel?: () => void;
+}) {
+  // Set locale for validation messages
+  setZodLocale(LOCALE);
+
+  // Helper functions
+  const label = (key: string) => getCustomerFieldLabel(key, LOCALE);
+  const placeholder = (key: string) => getCustomerFieldPlaceholder(key, LOCALE);
+  const rule = (key: keyof typeof customerSchemas) =>
+    zodRule(customerSchemas[key], label(key));
+
+  return (
+    <Card>
+      <Form
+        form={form}
+        layout="horizontal"
+        labelCol={{ span: 6 }}
+        wrapperCol={{ span: 18 }}
+        initialValues={initialValues}
+        onFinish={onSubmit}
+        style={{ maxWidth: 800 }}
+      >
+        {/* Section: Contact */}
+        <Divider orientation="left">Contact</Divider>
+
+        <Form.Item
+          name="email"
+          label={label('email')}
+          rules={[rule('email')]}
+        >
+          <Input type="email" placeholder={placeholder('email')} />
+        </Form.Item>
+
+        {/* Submit Buttons */}
+        <Form.Item wrapperCol={{ offset: 6, span: 18 }}>
+          <Space>
+            <Button type="primary" htmlType="submit" loading={loading}>
+              {isEdit ? 'Update' : 'Create'}
+            </Button>
+            {onCancel && <Button onClick={onCancel}>Cancel</Button>}
+          </Space>
+        </Form.Item>
+      </Form>
+    </Card>
+  );
+}
+```
+
+## Key Patterns
+
+### 1. Helper Functions (MUST define in every form)
+
+```tsx
+const LOCALE = 'ja'; // Get from context in real app
+
+// Set locale once at start
+setZodLocale(LOCALE);
+
+// Define helper functions
+const label = (key: string) => getCustomerFieldLabel(key, LOCALE);
+const placeholder = (key: string) => getCustomerFieldPlaceholder(key, LOCALE);
+const rule = (key: keyof typeof customerSchemas) =>
+  zodRule(customerSchemas[key], label(key));
+```
+
+### 2. Form.Item Pattern
+
+```tsx
+<Form.Item
+  name="email"                        // Field name (matches backend)
+  label={label('email')}              // i18n label
+  rules={[rule('email')]}             // Zod validation
+>
+  <Input 
+    type="email" 
+    placeholder={placeholder('email')} // i18n placeholder
+  />
+</Form.Item>
+```
+
+### 3. Section Dividers
+
+```tsx
+<Divider orientation="left">Contact Info</Divider>
+```
+
+## Compound Fields (Japan Plugin)
+
+For Japanese compound types, use Japanese field components:
+
+### JapaneseNameField
+
+```tsx
+import { JapaneseNameField } from '@famgia/omnify-react';
+
+<JapaneseNameField
+  schemas={customerSchemas}
+  i18n={customerI18n}
+  prefix="name"
+  required
+  showKana
+/>
+```
+
+### JapaneseAddressField
+
+```tsx
+import { JapaneseAddressField } from '@famgia/omnify-react';
+
+<JapaneseAddressField
+  form={form}
+  schemas={customerSchemas}
+  i18n={customerI18n}
+  prefix="address"
+  prefectureOptions={prefectureOptions}  // Required for Select
+  enablePostalLookup
+/>
+```
+
+### JapaneseBankField
+
+```tsx
+import { JapaneseBankField } from '@famgia/omnify-react';
+
+<JapaneseBankField
+  schemas={customerSchemas}
+  i18n={customerI18n}
+  prefix="bank"
+  accountTypeOptions={accountTypeOptions}  // Required for Select
+/>
+```
+
+## Props Pattern
+
+```tsx
+interface CustomerFormProps {
+  form: FormInstance<CustomerCreate>;    // REQUIRED - from parent
+  initialValues?: Partial<Customer>;     // For edit mode
+  onSubmit: (values: CustomerCreate) => void;
+  loading?: boolean;
+  isEdit?: boolean;
+  onCancel?: () => void;
+}
+```
+
+## Page Component (Parent)
+
+```tsx
+import { Form } from 'antd';
+import { useFormMutation } from '@famgia/omnify-react';
+import { customerService } from '@/services/customers';
+import { queryKeys } from '@/lib/queryKeys';
+import { CustomerForm } from '@/features/customers/CustomerForm';
+import type { CustomerCreate } from './.omnify/schemas';
+
+export default function CreateCustomerPage() {
+  const [form] = Form.useForm<CustomerCreate>();
+
+  const { mutate, isPending } = useFormMutation({
+    form,
+    mutationFn: customerService.create,
+    invalidateKeys: [queryKeys.customers.all],
+    successMessage: "messages.created",
+    redirectTo: "/customers",
+  });
+
+  return (
+    <CustomerForm
+      form={form}
+      onSubmit={(values) => mutate(values)}
+      loading={isPending}
+    />
+  );
+}
+```
+
+## Backend Errors (422)
+
+`useFormMutation` automatically handles:
+1. `form.setFields(getFormErrors(error))` - display on form fields
+2. `message.error(validationMessage)` - toast message
+
+**Field names MUST match Laravel:**
+```tsx
+// Laravel: { errors: { "name_lastname": ["..."] } }
+<Form.Item name="name_lastname">  // ✅ Matches
+<Form.Item name="lastName">       // ❌ Doesn't match
+```
+
+## Checklist
+
+- [ ] Import from `@famgia/omnify-react`
+- [ ] Define `label()`, `placeholder()`, `rule()` helper functions
+- [ ] Call `setZodLocale(LOCALE)` at start
+- [ ] Form receives `form` prop from parent (not create own)
+- [ ] Use `Divider` for sections
+- [ ] Use Japanese field components (JapaneseNameField, etc.)
+- [ ] Provide options for Select fields (prefectureOptions, accountTypeOptions)
+- [ ] Field names match Laravel field names
+- [ ] Submit buttons with loading state
+
+## Common Mistakes
+
+```tsx
+// ❌ Wrong - Create form instance in form component
+function MyForm() {
+  const [form] = Form.useForm();  // DON'T create here
+  return <Form form={form}>...
+}
+
+// ✅ Correct - Receive from parent
+function MyForm({ form }: { form: FormInstance }) {
+  return <Form form={form}>...
+}
+```
+
+```tsx
+// ❌ Wrong - Inline validation message
+rules={[{ required: true, message: 'Email is required' }]}
+
+// ✅ Correct - Use zodRule with i18n
+rules={[rule('email')]}
+```
+
+```tsx
+// ❌ Wrong - Hardcoded placeholder
+<Input placeholder="Enter email" />
+
+// ✅ Correct - Use placeholder helper
+<Input placeholder={placeholder('email')} />
+```

@@ -1,0 +1,73 @@
+---
+description: "Laravel API Resource rules: OpenAPI schema MUST match toArray() output, extend OmnifyBase for auto-generated fields, use whenLoaded() for relations. Apply when editing Resource classes."
+globs: ["app/Http/Resources/**/*.php"]
+alwaysApply: false
+---
+
+# Resource Rules
+
+## Golden Rule: Schema MUST Match Output
+
+OpenAPI Schema properties MUST match the actual `toArray()` / `schemaArray()` output.
+
+## Before Editing Resource
+
+1. **Read `OmnifyBase/*ResourceBase.php`** to see actual fields
+2. **Compare with `#[OA\Schema]`** properties
+3. **Add missing fields** to schema
+4. **Remove non-existent fields** from schema
+
+## Checklist
+
+```php
+// Check OmnifyBase/*ResourceBase.php → schemaArray()
+return [
+    'id' => $this->id,
+    'name_lastname' => $this->name_lastname,
+    'name_full_name' => $this->name_full_name,      // ← Computed field!
+    'email' => $this->email,
+    'created_at' => $this->created_at?->toISOString(),
+];
+
+// #[OA\Schema] MUST have ALL these properties
+#[OA\Schema(
+    properties: [
+        new OA\Property(property: 'id', ...),
+        new OA\Property(property: 'name_lastname', ...),
+        new OA\Property(property: 'name_full_name', ...),  // ← Don't forget!
+        new OA\Property(property: 'email', ...),
+        new OA\Property(property: 'created_at', ...),
+    ]
+)]
+```
+
+## Common Mistakes
+
+| Mistake                                  | Fix                     |
+| ---------------------------------------- | ----------------------- |
+| Missing computed fields (name_full_name) | Check *ResourceBase.php |
+| Schema has field not in output           | Remove from schema      |
+| Field type mismatch                      | Match actual PHP type   |
+| Missing nullable                         | Check if `?->` used     |
+
+## JapaneseName Type Fields
+
+JapaneseName expands to multiple fields including computed ones:
+
+```php
+// All these come from JapaneseName type
+'name_lastname' => $this->name_lastname,
+'name_firstname' => $this->name_firstname,
+'name_kana_lastname' => $this->name_kana_lastname,
+'name_kana_firstname' => $this->name_kana_firstname,
+'name_full_name' => $this->name_full_name,           // Computed!
+'name_full_name_kana' => $this->name_full_name_kana, // Computed!
+```
+
+**MUST include ALL in OpenAPI Schema!**
+
+## After Editing
+
+```bash
+./artisan l5-swagger:generate
+```

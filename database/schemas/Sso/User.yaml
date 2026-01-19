@@ -1,10 +1,7 @@
-# yaml-language-server: $schema=../../../../../node_modules/.omnify/combined-schema.json
-# SSO User Schema - Complete User schema for SSO integration
-# Can be used standalone or merged with main User.yaml if exists
+# SSO User Schema - User model for SSO integration
+# Contains basic user info (cached from Console) and SSO fields
 
-kind: partial
-target: User
-priority: 10 # High priority - merged first into User schema
+kind: object
 
 displayName:
   ja: ユーザー
@@ -13,9 +10,10 @@ displayName:
 
 options:
   timestamps: true
+  idType: Uuid
 
 properties:
-  # Basic auth fields
+  # Basic user info (cached from Console)
   name:
     type: String
     displayName:
@@ -31,34 +29,9 @@ properties:
       en: Email
       vi: Email
 
-  email_verified_at:
-    type: Timestamp
-    nullable: true
-    displayName:
-      ja: メール確認日時
-      en: Email Verified At
-      vi: Ngày xác thực email
-
-  password:
-    type: String
-    displayName:
-      ja: パスワード
-      en: Password
-      vi: Mật khẩu
-
-  remember_token:
-    type: String
-    length: 100
-    nullable: true
-    displayName:
-      ja: リメンバートークン
-      en: Remember Token
-      vi: Token ghi nhớ
-
   # SSO fields
   console_user_id:
-    type: BigInt
-    unsigned: true
+    type: Uuid
     unique: true
     nullable: true
     displayName:
@@ -106,16 +79,17 @@ properties:
       en: Access token expiration time
       vi: Thời gian hết hạn của token truy cập
 
-  role:
+  roles:
     type: Association
-    relation: ManyToOne
+    relation: ManyToMany
     target: Role
-    nullable: true
+    joinTable: role_user
+    owning: true
     displayName:
       ja: ロール
-      en: Role
+      en: Roles
       vi: Vai trò
     description:
-      ja: ユーザーのグローバルロール
-      en: User's global role
-      vi: Vai trò toàn cục của người dùng
+      ja: ユーザーのロール（複数可）
+      en: User's roles (multiple allowed)
+      vi: Vai trò của người dùng (có thể nhiều)

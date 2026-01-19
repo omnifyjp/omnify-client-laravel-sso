@@ -1,8 +1,5 @@
-# yaml-language-server: $schema=../../../../../node_modules/.omnify/combined-schema.json
 # Role-Permission pivot table
-
-kind: partial
-target: RolePermission
+kind: object
 
 displayName:
   ja: ロール権限
@@ -11,6 +8,7 @@ displayName:
 
 options:
   timestamps: true
+  idType: Uuid
   tableName: role_permissions
 
 properties:

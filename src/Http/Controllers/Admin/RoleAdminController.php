@@ -96,13 +96,13 @@ class RoleAdminController extends Controller
         summary: 'Get a specific role',
         tags: ['SSO Roles'],
         security: [['sanctum' => []]],
-        parameters: [new OA\Parameter(name: 'id', in: 'path', required: true, schema: new OA\Schema(type: 'integer'))],
+        parameters: [new OA\Parameter(name: 'id', in: 'path', required: true, schema: new OA\Schema(type: 'string', format: 'uuid'))],
         responses: [
             new OA\Response(response: 200, description: 'Role details', content: new OA\JsonContent(ref: '#/components/schemas/Role')),
             new OA\Response(response: 404, description: 'Role not found'),
         ]
     )]
-    public function show(int $id): JsonResponse
+    public function show(string $id): JsonResponse
     {
         $role = Role::with('permissions')->findOrFail($id);
 
@@ -119,7 +119,7 @@ class RoleAdminController extends Controller
         summary: 'Update a role',
         tags: ['SSO Roles'],
         security: [['sanctum' => []]],
-        parameters: [new OA\Parameter(name: 'id', in: 'path', required: true, schema: new OA\Schema(type: 'integer'))],
+        parameters: [new OA\Parameter(name: 'id', in: 'path', required: true, schema: new OA\Schema(type: 'string', format: 'uuid'))],
         requestBody: new OA\RequestBody(
             content: new OA\JsonContent(
                 properties: [
@@ -135,7 +135,7 @@ class RoleAdminController extends Controller
             new OA\Response(response: 422, description: 'Validation error'),
         ]
     )]
-    public function update(Request $request, int $id): JsonResponse
+    public function update(Request $request, string $id): JsonResponse
     {
         $role = Role::findOrFail($id);
 
@@ -167,14 +167,14 @@ class RoleAdminController extends Controller
         summary: 'Delete a role',
         tags: ['SSO Roles'],
         security: [['sanctum' => []]],
-        parameters: [new OA\Parameter(name: 'id', in: 'path', required: true, schema: new OA\Schema(type: 'integer'))],
+        parameters: [new OA\Parameter(name: 'id', in: 'path', required: true, schema: new OA\Schema(type: 'string', format: 'uuid'))],
         responses: [
             new OA\Response(response: 204, description: 'Role deleted'),
             new OA\Response(response: 404, description: 'Role not found'),
             new OA\Response(response: 422, description: 'Cannot delete system role'),
         ]
     )]
-    public function destroy(int $id): JsonResponse
+    public function destroy(string $id): JsonResponse
     {
         $role = Role::findOrFail($id);
 
@@ -203,7 +203,7 @@ class RoleAdminController extends Controller
         summary: 'Get role permissions',
         tags: ['SSO Roles'],
         security: [['sanctum' => []]],
-        parameters: [new OA\Parameter(name: 'id', in: 'path', required: true, schema: new OA\Schema(type: 'integer'))],
+        parameters: [new OA\Parameter(name: 'id', in: 'path', required: true, schema: new OA\Schema(type: 'string', format: 'uuid'))],
         responses: [
             new OA\Response(
                 response: 200,
@@ -218,7 +218,7 @@ class RoleAdminController extends Controller
             new OA\Response(response: 404, description: 'Role not found'),
         ]
     )]
-    public function permissions(int $id): JsonResponse
+    public function permissions(string $id): JsonResponse
     {
         $role = Role::with('permissions')->findOrFail($id);
 
@@ -240,7 +240,7 @@ class RoleAdminController extends Controller
         summary: 'Sync role permissions',
         tags: ['SSO Roles'],
         security: [['sanctum' => []]],
-        parameters: [new OA\Parameter(name: 'id', in: 'path', required: true, schema: new OA\Schema(type: 'integer'))],
+        parameters: [new OA\Parameter(name: 'id', in: 'path', required: true, schema: new OA\Schema(type: 'string', format: 'uuid'))],
         requestBody: new OA\RequestBody(
             required: true,
             content: new OA\JsonContent(
@@ -265,7 +265,7 @@ class RoleAdminController extends Controller
             new OA\Response(response: 404, description: 'Role not found'),
         ]
     )]
-    public function syncPermissions(Request $request, int $id): JsonResponse
+    public function syncPermissions(Request $request, string $id): JsonResponse
     {
         $role = Role::findOrFail($id);
 

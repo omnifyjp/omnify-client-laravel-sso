@@ -1,0 +1,96 @@
+# .claude/omnify Documentation
+
+> AI-focused documentation for Omnify projects. Navigate by PURPOSE.
+
+## Quick Navigation
+
+| Purpose                  | Folder                       | When to Read                      |
+| ------------------------ | ---------------------------- | --------------------------------- |
+| **AI Personas**          | [agents/](./agents/)         | Select agent for task             |
+| **HOW to do tasks**      | [workflows/](./workflows/)   | New feature, bug fix, code review |
+| **WHAT rules to follow** | [rules/](./rules/)           | Security, performance, naming     |
+| **HOW to implement**     | [guides/](./guides/)         | Controller, Resource, Testing     |
+| **Quick verify**         | [checklists/](./checklists/) | Before commit, PR review          |
+
+## Agents
+
+| Agent                               | Role           | When to Use               |
+| ----------------------------------- | -------------- | ------------------------- |
+| [@developer](./agents/developer.md) | Implementation | Writing code, features    |
+| [@reviewer](./agents/reviewer.md)   | Code Review    | PR review, security audit |
+| [@architect](./agents/architect.md) | System Design  | Schema, API design        |
+| [@tester](./agents/tester.md)       | Testing        | Writing tests             |
+
+---
+
+## Structure
+
+```
+.claude/omnify/
+├── agents/              # AI Personas (WHO)
+│   ├── developer.md     # Implementation agent
+│   ├── reviewer.md      # Code review agent
+│   ├── architect.md     # System design agent
+│   └── tester.md        # Testing agent
+│
+├── workflows/           # Step-by-step processes (HOW)
+│   ├── new-feature.md   # Create new feature
+│   ├── bug-fix.md       # Fix a bug
+│   └── code-review.md   # Review PR
+│
+├── rules/               # Must-follow rules (WHAT)
+│   ├── security.md      # Security rules
+│   ├── performance.md   # Performance & quality rules
+│   ├── php-standards.md # PHP 8+ standards & best practices
+│   └── naming.md        # Naming conventions
+│
+├── guides/              # Implementation guides (REFERENCE)
+│   ├── omnify/          # Omnify tool documentation
+│   ├── laravel/         # Laravel implementation
+│   └── react/           # React implementation
+│
+└── checklists/          # Quick verification (QA)
+    ├── backend.md
+    └── react.md
+```
+
+---
+
+## By Task Type
+
+### New Feature
+
+1. Read [workflows/new-feature.md](./workflows/new-feature.md)
+2. Follow step-by-step: Schema → API → Tests → OpenAPI → Frontend
+
+### Bug Fix
+
+1. Read [workflows/bug-fix.md](./workflows/bug-fix.md)
+2. Reproduce → Locate → Test → Fix → Verify
+
+### Code Review
+
+1. Read [workflows/code-review.md](./workflows/code-review.md)
+2. Security → Performance → Quality → Tests → Approve
+
+---
+
+## Debugging Quick Reference
+
+| Issue                  | Check                          |
+| ---------------------- | ------------------------------ |
+| API returns wrong data | `guides/laravel/resource.md`   |
+| Validation fails       | `guides/laravel/request.md`    |
+| 404 error              | Route + Model binding          |
+| N+1 queries            | `rules/performance.md`         |
+| Security concern       | `rules/security.md`            |
+
+---
+
+## Key Principles
+
+1. **Schema-First**: Start with `schemas/` folder
+2. **Thin Controllers**: Validate → Delegate → Respond
+3. **UTC Everywhere**: Store UTC, send ISO 8601
+4. **Test Everything**: 正常系 + 異常系
+5. **Don't Over-Engineer**: Simple CRUD = Controller + Model

@@ -20,21 +20,23 @@ use Illuminate\Database\Eloquent\Relations\MorphToMany;
 use Illuminate\Database\Eloquent\Collection as EloquentCollection;
 use Omnify\SsoClient\Models\OmnifyBase\Traits\HasLocalizedDisplayName;
 use Omnify\SsoClient\Models\OmnifyBase\Locales\TeamPermissionLocales;
+use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Omnify\SsoClient\Models\Permission;
 
 /**
  * TeamPermissionBaseModel
  *
- * @property int $console_org_id
- * @property int $console_team_id
+ * @property mixed $console_org_id
+ * @property mixed $console_team_id
  * @property Permission|null $permission
- * @property int|null $permission_id
+ * @property string|null $permission_id
  */
 class TeamPermissionBaseModel extends BaseModel
 {
     use HasLocalizedDisplayName;
     use SoftDeletes;
+    use HasUuids;
     /**
      * The table associated with the model.
      */
@@ -45,6 +47,16 @@ class TeamPermissionBaseModel extends BaseModel
      */
     protected $primaryKey = 'id';
 
+    /**
+     * The "type" of the primary key ID.
+     */
+    protected $keyType = 'string';
+
+
+    /**
+     * Indicates if the IDs are auto-incrementing.
+     */
+    public $incrementing = false;
 
 
     /**
@@ -95,8 +107,7 @@ class TeamPermissionBaseModel extends BaseModel
     protected function casts(): array
     {
         return [
-            'console_org_id' => 'integer',
-            'console_team_id' => 'integer',
+
         ];
     }
 

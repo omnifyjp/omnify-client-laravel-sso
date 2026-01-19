@@ -3,11 +3,11 @@
 namespace Omnify\SsoClient\Tests\Fixtures\Models;
 
 use Illuminate\Database\Eloquent\Factories\Factory;
-use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Str;
 
 /**
  * テスト用Userファクトリー
+ * Updated for UUID-based schema (no password, no remember_token)
  */
 class UserFactory extends Factory
 {
@@ -18,21 +18,11 @@ class UserFactory extends Factory
         return [
             'name' => fake()->name(),
             'email' => fake()->unique()->safeEmail(),
-            'email_verified_at' => now(),
-            'password' => Hash::make('password'),
-            'remember_token' => Str::random(10),
-            'console_user_id' => fake()->unique()->numberBetween(1, 10000),
+            'console_user_id' => (string) Str::uuid(),
+            'console_access_token' => 'encrypted-token',
+            'console_refresh_token' => 'encrypted-refresh',
+            'console_token_expires_at' => now()->addHour(),
         ];
-    }
-
-    /**
-     * パスワードなしのユーザー
-     */
-    public function withoutPassword(): static
-    {
-        return $this->state(fn (array $attributes) => [
-            'password' => null,
-        ]);
     }
 
     /**
@@ -46,12 +36,24 @@ class UserFactory extends Factory
     }
 
     /**
-     * 特定のコンソールユーザーID
+     * 特定のコンソールユーザーID (UUID)
      */
-    public function withConsoleUserId(int $id): static
+    public function withConsoleUserId(string $id): static
     {
         return $this->state(fn (array $attributes) => [
             'console_user_id' => $id,
+        ]);
+    }
+
+    /**
+     * トークンなしのユーザー
+     */
+    public function withoutTokens(): static
+    {
+        return $this->state(fn (array $attributes) => [
+            'console_access_token' => null,
+            'console_refresh_token' => null,
+            'console_token_expires_at' => null,
         ]);
     }
 }

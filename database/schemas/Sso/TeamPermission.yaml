@@ -1,9 +1,5 @@
-# yaml-language-server: $schema=../../../../../node_modules/.omnify/combined-schema.json
-# Team Permission - Extended pivot table with org context
-# Tracks which permissions are assigned to teams within an organization
-
-kind: partial
-target: TeamPermission
+# Team Permission - pivot table with org context
+kind: object
 
 displayName:
   ja: チーム権限
@@ -13,13 +9,13 @@ displayName:
 options:
   timestamps: true
   softDelete: true
+  idType: Uuid
   indexes:
     - columns: [console_org_id, console_team_id]
 
 properties:
   console_org_id:
-    type: BigInt
-    unsigned: true
+    type: Uuid
     displayName:
       ja: Console Organization ID
       en: Console Organization ID
@@ -30,8 +26,7 @@ properties:
       vi: ID tổ chức từ Console
 
   console_team_id:
-    type: BigInt
-    unsigned: true
+    type: Uuid
     displayName:
       ja: Console Team ID
       en: Console Team ID

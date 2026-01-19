@@ -20,22 +20,22 @@ use Illuminate\Database\Eloquent\Relations\MorphToMany;
 use Illuminate\Database\Eloquent\Collection as EloquentCollection;
 use Omnify\SsoClient\Models\OmnifyBase\Traits\HasLocalizedDisplayName;
 use Omnify\SsoClient\Models\OmnifyBase\Locales\BranchLocales;
+use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
 /**
  * BranchBaseModel
  *
- * @property int $console_branch_id
- * @property int $console_org_id
+ * @property mixed $console_branch_id
+ * @property mixed $console_org_id
  * @property string $code
  * @property string $name
- * @property bool $is_headquarters
- * @property bool $is_active
  */
 class BranchBaseModel extends BaseModel
 {
     use HasLocalizedDisplayName;
     use SoftDeletes;
+    use HasUuids;
     /**
      * The table associated with the model.
      */
@@ -46,6 +46,16 @@ class BranchBaseModel extends BaseModel
      */
     protected $primaryKey = 'id';
 
+    /**
+     * The "type" of the primary key ID.
+     */
+    protected $keyType = 'string';
+
+
+    /**
+     * Indicates if the IDs are auto-incrementing.
+     */
+    public $incrementing = false;
 
 
     /**
@@ -75,8 +85,6 @@ class BranchBaseModel extends BaseModel
         'console_org_id',
         'code',
         'name',
-        'is_headquarters',
-        'is_active',
     ];
 
     /**
@@ -99,10 +107,7 @@ class BranchBaseModel extends BaseModel
     protected function casts(): array
     {
         return [
-            'console_branch_id' => 'integer',
-            'console_org_id' => 'integer',
-            'is_headquarters' => 'boolean',
-            'is_active' => 'boolean',
+
         ];
     }
 

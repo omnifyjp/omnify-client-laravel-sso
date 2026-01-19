@@ -128,13 +128,13 @@ class PermissionAdminController extends Controller
         summary: 'Get a specific permission',
         tags: ['SSO Permissions'],
         security: [['sanctum' => []]],
-        parameters: [new OA\Parameter(name: 'id', in: 'path', required: true, schema: new OA\Schema(type: 'integer'))],
+        parameters: [new OA\Parameter(name: 'id', in: 'path', required: true, schema: new OA\Schema(type: 'string', format: 'uuid'))],
         responses: [
             new OA\Response(response: 200, description: 'Permission details', content: new OA\JsonContent(ref: '#/components/schemas/Permission')),
             new OA\Response(response: 404, description: 'Permission not found'),
         ]
     )]
-    public function show(int $id): JsonResponse
+    public function show(string $id): JsonResponse
     {
         $permission = Permission::with('roles')->findOrFail($id);
 
@@ -151,7 +151,7 @@ class PermissionAdminController extends Controller
         summary: 'Update a permission',
         tags: ['SSO Permissions'],
         security: [['sanctum' => []]],
-        parameters: [new OA\Parameter(name: 'id', in: 'path', required: true, schema: new OA\Schema(type: 'integer'))],
+        parameters: [new OA\Parameter(name: 'id', in: 'path', required: true, schema: new OA\Schema(type: 'string', format: 'uuid'))],
         requestBody: new OA\RequestBody(
             content: new OA\JsonContent(
                 properties: [
@@ -166,7 +166,7 @@ class PermissionAdminController extends Controller
             new OA\Response(response: 404, description: 'Permission not found'),
         ]
     )]
-    public function update(Request $request, int $id): JsonResponse
+    public function update(Request $request, string $id): JsonResponse
     {
         $permission = Permission::findOrFail($id);
 
@@ -195,13 +195,13 @@ class PermissionAdminController extends Controller
         summary: 'Delete a permission',
         tags: ['SSO Permissions'],
         security: [['sanctum' => []]],
-        parameters: [new OA\Parameter(name: 'id', in: 'path', required: true, schema: new OA\Schema(type: 'integer'))],
+        parameters: [new OA\Parameter(name: 'id', in: 'path', required: true, schema: new OA\Schema(type: 'string', format: 'uuid'))],
         responses: [
             new OA\Response(response: 204, description: 'Permission deleted'),
             new OA\Response(response: 404, description: 'Permission not found'),
         ]
     )]
-    public function destroy(int $id): JsonResponse
+    public function destroy(string $id): JsonResponse
     {
         $permission = Permission::findOrFail($id);
 

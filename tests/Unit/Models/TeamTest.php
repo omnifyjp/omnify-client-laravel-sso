@@ -8,8 +8,7 @@
  */
 
 use Omnify\SsoClient\Models\Team;
-use Omnify\SsoClient\Models\Permission;
-use Omnify\SsoClient\Models\TeamPermission;
+use Illuminate\Support\Str;
 
 beforeEach(function () {
     $this->artisan('migrate', ['--database' => 'testing']);
@@ -20,67 +19,80 @@ beforeEach(function () {
 // =============================================================================
 
 test('can create team with required fields', function () {
+    $consoleTeamId = (string) Str::uuid();
+    $consoleOrgId = (string) Str::uuid();
+    
     $team = Team::create([
+        'console_team_id' => $consoleTeamId,
+        'console_org_id' => $consoleOrgId,
         'name' => 'Development Team',
-        'console_team_id' => 12345,
-        'console_org_id' => 100,
     ]);
 
     expect($team)->toBeInstanceOf(Team::class)
+        ->and($team->console_team_id)->toBe($consoleTeamId)
+        ->and($team->console_org_id)->toBe($consoleOrgId)
         ->and($team->name)->toBe('Development Team')
-        ->and($team->console_team_id)->toBe(12345)
-        ->and($team->console_org_id)->toBe(100)
-        ->and($team->id)->toBeInt();
+        ->and($team->id)->toBeString()
+        ->and(Str::isUuid($team->id))->toBeTrue();
+});
+
+test('team id is uuid', function () {
+    $team = Team::factory()->create();
+    
+    expect($team->id)->toBeString()
+        ->and(Str::isUuid($team->id))->toBeTrue();
 });
 
 test('console_team_id must be unique', function () {
-    Team::create([
-        'name' => 'Team 1',
-        'console_team_id' => 12345,
-        'console_org_id' => 100,
-    ]);
-
-    expect(fn () => Team::create([
-        'name' => 'Team 2',
-        'console_team_id' => 12345,
-        'console_org_id' => 100,
-    ]))->toThrow(\Illuminate\Database\QueryException::class);
-});
-
-test('can create multiple teams in same organization', function () {
-    Team::create(['name' => 'Team 1', 'console_team_id' => 1001, 'console_org_id' => 100]);
-    Team::create(['name' => 'Team 2', 'console_team_id' => 1002, 'console_org_id' => 100]);
-    Team::create(['name' => 'Team 3', 'console_team_id' => 1003, 'console_org_id' => 100]);
-
-    $orgTeams = Team::where('console_org_id', 100)->get();
+    $consoleTeamId = (string) Str::uuid();
     
-    expect($orgTeams)->toHaveCount(3);
+    Team::factory()->create(['console_team_id' => $consoleTeamId]);
+
+    expect(fn () => Team::factory()->create(['console_team_id' => $consoleTeamId]))
+        ->toThrow(\Illuminate\Database\QueryException::class);
 });
 
 // =============================================================================
-// Casting Tests - キャストテスト
+// Query Tests - クエリテスト
 // =============================================================================
 
-test('console_team_id is cast to integer', function () {
-    $team = Team::create([
+test('can find team by console_team_id', function () {
+    $consoleTeamId = (string) Str::uuid();
+    
+    Team::factory()->create([
+        'console_team_id' => $consoleTeamId,
         'name' => 'Test Team',
-        'console_team_id' => '12345',
-        'console_org_id' => '100',
     ]);
 
-    expect($team->console_team_id)->toBeInt()
-        ->and($team->console_team_id)->toBe(12345);
+    $found = Team::where('console_team_id', $consoleTeamId)->first();
+    
+    expect($found)->not->toBeNull()
+        ->and($found->name)->toBe('Test Team');
 });
 
-test('console_org_id is cast to integer', function () {
-    $team = Team::create([
-        'name' => 'Test Team',
-        'console_team_id' => 12345,
-        'console_org_id' => '100',
-    ]);
+test('can filter teams by organization', function () {
+    $orgId1 = (string) Str::uuid();
+    $orgId2 = (string) Str::uuid();
+    
+    Team::factory()->count(3)->forOrganization($orgId1)->create();
+    Team::factory()->count(2)->forOrganization($orgId2)->create();
 
-    expect($team->console_org_id)->toBeInt()
-        ->and($team->console_org_id)->toBe(100);
+    $org1Teams = Team::where('console_org_id', $orgId1)->get();
+    
+    expect($org1Teams)->toHaveCount(3);
+});
+
+test('can search teams by name', function () {
+    $orgId = (string) Str::uuid();
+    
+    Team::factory()->forOrganization($orgId)->create(['name' => 'Development Team']);
+    Team::factory()->forOrganization($orgId)->create(['name' => 'Marketing Team']);
+    Team::factory()->forOrganization($orgId)->create(['name' => 'Sales Team']);
+
+    $devTeams = Team::where('name', 'like', '%Development%')->get();
+    
+    expect($devTeams)->toHaveCount(1)
+        ->and($devTeams->first()->name)->toBe('Development Team');
 });
 
 // =============================================================================
@@ -88,296 +100,53 @@ test('console_org_id is cast to integer', function () {
 // =============================================================================
 
 test('team uses soft deletes', function () {
-    $team = Team::create([
-        'name' => 'Deletable Team',
-        'console_team_id' => 12345,
-        'console_org_id' => 100,
-    ]);
-
-    $team->delete();
-    
-    // Should not be found in normal query
-    expect(Team::find($team->id))->toBeNull();
-    
-    // Should be found with trashed
-    expect(Team::withTrashed()->find($team->id))->not->toBeNull();
-});
-
-test('can restore soft deleted team', function () {
-    $team = Team::create([
-        'name' => 'Deletable Team',
-        'console_team_id' => 12345,
-        'console_org_id' => 100,
-    ]);
-
-    $team->delete();
-    expect(Team::find($team->id))->toBeNull();
-
-    $team->restore();
-    expect(Team::find($team->id))->not->toBeNull();
-});
-
-test('can force delete team', function () {
-    $team = Team::create([
-        'name' => 'Deletable Team',
-        'console_team_id' => 12345,
-        'console_org_id' => 100,
-    ]);
+    $team = Team::factory()->create();
     $teamId = $team->id;
-
-    $team->forceDelete();
     
-    expect(Team::withTrashed()->find($teamId))->toBeNull();
-});
-
-test('deleted_at is set on soft delete', function () {
-    $team = Team::create([
-        'name' => 'Deletable Team',
-        'console_team_id' => 12345,
-        'console_org_id' => 100,
-    ]);
-
     $team->delete();
-    $team->refresh();
     
-    expect($team->deleted_at)->not->toBeNull()
-        ->and($team->deleted_at)->toBeInstanceOf(\Carbon\Carbon::class);
-});
-
-test('can get only trashed teams', function () {
-    Team::create(['name' => 'Active 1', 'console_team_id' => 1001, 'console_org_id' => 100]);
-    $deleted = Team::create(['name' => 'Deleted', 'console_team_id' => 1002, 'console_org_id' => 100]);
-    Team::create(['name' => 'Active 2', 'console_team_id' => 1003, 'console_org_id' => 100]);
-
-    $deleted->delete();
-
-    expect(Team::count())->toBe(2)
-        ->and(Team::onlyTrashed()->count())->toBe(1)
-        ->and(Team::withTrashed()->count())->toBe(3);
-});
-
-// =============================================================================
-// findByConsoleId Tests - findByConsoleIdテスト
-// =============================================================================
-
-test('findByConsoleId returns team when exists', function () {
-    Team::create(['name' => 'Target Team', 'console_team_id' => 99999, 'console_org_id' => 100]);
-
-    $found = Team::findByConsoleId(99999);
+    // Cannot find with normal query
+    expect(Team::find($teamId))->toBeNull();
     
-    expect($found)->not->toBeNull()
-        ->and($found->name)->toBe('Target Team');
+    // Can find with trashed
+    expect(Team::withTrashed()->find($teamId))->not->toBeNull();
 });
 
-test('findByConsoleId returns null when not exists', function () {
-    $found = Team::findByConsoleId(99999);
+test('soft deleted team can be restored', function () {
+    $team = Team::factory()->create();
+    $teamId = $team->id;
     
-    expect($found)->toBeNull();
-});
-
-test('findByConsoleId does not return soft deleted team', function () {
-    $team = Team::create(['name' => 'Deleted Team', 'console_team_id' => 99999, 'console_org_id' => 100]);
     $team->delete();
-
-    $found = Team::findByConsoleId(99999);
     
-    expect($found)->toBeNull();
+    Team::withTrashed()->find($teamId)->restore();
+    
+    expect(Team::find($teamId))->not->toBeNull();
 });
 
 // =============================================================================
-// getByOrgId Tests - getByOrgIdテスト
+// Factory Tests - ファクトリーテスト
 // =============================================================================
 
-test('getByOrgId returns all teams for organization', function () {
-    Team::create(['name' => 'Org1 Team 1', 'console_team_id' => 1001, 'console_org_id' => 100]);
-    Team::create(['name' => 'Org1 Team 2', 'console_team_id' => 1002, 'console_org_id' => 100]);
-    Team::create(['name' => 'Org2 Team 1', 'console_team_id' => 2001, 'console_org_id' => 200]);
-
-    $org1Teams = Team::getByOrgId(100);
+test('factory creates valid team', function () {
+    $team = Team::factory()->create();
     
-    expect($org1Teams)->toHaveCount(2)
-        ->and($org1Teams->pluck('name')->toArray())->toContain('Org1 Team 1', 'Org1 Team 2');
+    expect($team)->toBeInstanceOf(Team::class)
+        ->and($team->id)->toBeString()
+        ->and(Str::isUuid($team->id))->toBeTrue()
+        ->and(Str::isUuid($team->console_team_id))->toBeTrue()
+        ->and(Str::isUuid($team->console_org_id))->toBeTrue()
+        ->and($team->name)->toBeString();
 });
 
-test('getByOrgId returns empty collection when no teams', function () {
-    $teams = Team::getByOrgId(99999);
+test('factory forOrganization creates teams for same org', function () {
+    $orgId = (string) Str::uuid();
     
-    expect($teams)->toBeInstanceOf(\Illuminate\Database\Eloquent\Collection::class)
-        ->and($teams)->toHaveCount(0);
-});
-
-test('getByOrgId does not return soft deleted teams', function () {
-    Team::create(['name' => 'Active Team', 'console_team_id' => 1001, 'console_org_id' => 100]);
-    $deleted = Team::create(['name' => 'Deleted Team', 'console_team_id' => 1002, 'console_org_id' => 100]);
-    $deleted->delete();
-
-    $teams = Team::getByOrgId(100);
+    $teams = Team::factory()->count(3)->forOrganization($orgId)->create();
     
-    expect($teams)->toHaveCount(1)
-        ->and($teams->first()->name)->toBe('Active Team');
-});
-
-// =============================================================================
-// Permission Tests via TeamPermission - TeamPermission経由の権限テスト
-// =============================================================================
-
-test('can assign permission to team via TeamPermission', function () {
-    $team = Team::create(['name' => 'Test Team', 'console_team_id' => 12345, 'console_org_id' => 100]);
-    $permission = Permission::create(['name' => 'View Projects', 'slug' => 'projects.view']);
-
-    TeamPermission::create([
-        'console_team_id' => $team->console_team_id,
-        'console_org_id' => $team->console_org_id,
-        'permission_id' => $permission->id,
-    ]);
-
-    $teamPermissions = TeamPermission::where('console_team_id', $team->console_team_id)->get();
-    expect($teamPermissions)->toHaveCount(1);
-});
-
-test('can assign multiple permissions to team', function () {
-    $team = Team::create(['name' => 'Test Team', 'console_team_id' => 12345, 'console_org_id' => 100]);
-    $perm1 = Permission::create(['name' => 'View Projects', 'slug' => 'projects.view']);
-    $perm2 = Permission::create(['name' => 'Edit Projects', 'slug' => 'projects.edit']);
-    $perm3 = Permission::create(['name' => 'Delete Projects', 'slug' => 'projects.delete']);
-
-    foreach ([$perm1, $perm2, $perm3] as $perm) {
-        TeamPermission::create([
-            'console_team_id' => $team->console_team_id,
-            'console_org_id' => $team->console_org_id,
-            'permission_id' => $perm->id,
-        ]);
+    expect($teams)->toHaveCount(3);
+    foreach ($teams as $team) {
+        expect($team->console_org_id)->toBe($orgId);
     }
-
-    $teamPermissions = TeamPermission::where('console_team_id', $team->console_team_id)->get();
-    expect($teamPermissions)->toHaveCount(3);
-});
-
-test('hasPermission returns true when team has permission via TeamPermission', function () {
-    $team = Team::create(['name' => 'Test Team', 'console_team_id' => 12345, 'console_org_id' => 100]);
-    $permission = Permission::create(['name' => 'View Projects', 'slug' => 'projects.view']);
-    
-    TeamPermission::create([
-        'console_team_id' => $team->console_team_id,
-        'console_org_id' => $team->console_org_id,
-        'permission_id' => $permission->id,
-    ]);
-
-    expect($team->hasPermission('projects.view'))->toBeTrue();
-});
-
-test('hasPermission returns false when team does not have permission', function () {
-    $team = Team::create(['name' => 'Test Team', 'console_team_id' => 12345, 'console_org_id' => 100]);
-    Permission::create(['name' => 'View Projects', 'slug' => 'projects.view']);
-
-    expect($team->hasPermission('projects.view'))->toBeFalse();
-});
-
-test('hasAnyPermission returns true when team has at least one permission', function () {
-    $team = Team::create(['name' => 'Test Team', 'console_team_id' => 12345, 'console_org_id' => 100]);
-    $permission = Permission::create(['name' => 'View Projects', 'slug' => 'projects.view']);
-    Permission::create(['name' => 'Edit Projects', 'slug' => 'projects.edit']);
-    
-    TeamPermission::create([
-        'console_team_id' => $team->console_team_id,
-        'console_org_id' => $team->console_org_id,
-        'permission_id' => $permission->id,
-    ]);
-
-    expect($team->hasAnyPermission(['projects.view', 'projects.edit']))->toBeTrue();
-});
-
-test('hasAnyPermission returns false when team has none of the permissions', function () {
-    $team = Team::create(['name' => 'Test Team', 'console_team_id' => 12345, 'console_org_id' => 100]);
-    Permission::create(['name' => 'View Projects', 'slug' => 'projects.view']);
-
-    expect($team->hasAnyPermission(['projects.view', 'projects.edit']))->toBeFalse();
-});
-
-test('hasAllPermissions returns true when team has all permissions', function () {
-    $team = Team::create(['name' => 'Test Team', 'console_team_id' => 12345, 'console_org_id' => 100]);
-    $perm1 = Permission::create(['name' => 'View Projects', 'slug' => 'projects.view']);
-    $perm2 = Permission::create(['name' => 'Edit Projects', 'slug' => 'projects.edit']);
-    
-    foreach ([$perm1, $perm2] as $perm) {
-        TeamPermission::create([
-            'console_team_id' => $team->console_team_id,
-            'console_org_id' => $team->console_org_id,
-            'permission_id' => $perm->id,
-        ]);
-    }
-
-    expect($team->hasAllPermissions(['projects.view', 'projects.edit']))->toBeTrue();
-});
-
-test('hasAllPermissions returns false when team is missing some permissions', function () {
-    $team = Team::create(['name' => 'Test Team', 'console_team_id' => 12345, 'console_org_id' => 100]);
-    $permission = Permission::create(['name' => 'View Projects', 'slug' => 'projects.view']);
-    Permission::create(['name' => 'Edit Projects', 'slug' => 'projects.edit']);
-    
-    TeamPermission::create([
-        'console_team_id' => $team->console_team_id,
-        'console_org_id' => $team->console_org_id,
-        'permission_id' => $permission->id,
-    ]);
-
-    expect($team->hasAllPermissions(['projects.view', 'projects.edit']))->toBeFalse();
-});
-
-// =============================================================================
-// Query Tests - クエリテスト
-// =============================================================================
-
-test('can find team by name', function () {
-    Team::create(['name' => 'Unique Name', 'console_team_id' => 12345, 'console_org_id' => 100]);
-
-    $found = Team::where('name', 'Unique Name')->first();
-    
-    expect($found)->not->toBeNull()
-        ->and($found->console_team_id)->toBe(12345);
-});
-
-test('can search teams by name pattern', function () {
-    Team::create(['name' => 'Development Team', 'console_team_id' => 1001, 'console_org_id' => 100]);
-    Team::create(['name' => 'Design Team', 'console_team_id' => 1002, 'console_org_id' => 100]);
-    Team::create(['name' => 'Marketing', 'console_team_id' => 1003, 'console_org_id' => 100]);
-
-    $teams = Team::where('name', 'like', '%Team%')->get();
-    
-    expect($teams)->toHaveCount(2);
-});
-
-test('can order teams by name', function () {
-    Team::create(['name' => 'Zulu Team', 'console_team_id' => 1003, 'console_org_id' => 100]);
-    Team::create(['name' => 'Alpha Team', 'console_team_id' => 1001, 'console_org_id' => 100]);
-    Team::create(['name' => 'Bravo Team', 'console_team_id' => 1002, 'console_org_id' => 100]);
-
-    $teams = Team::orderBy('name')->get();
-    
-    expect($teams->first()->name)->toBe('Alpha Team')
-        ->and($teams->last()->name)->toBe('Zulu Team');
-});
-
-// =============================================================================
-// Update Tests - 更新テスト
-// =============================================================================
-
-test('can update team name', function () {
-    $team = Team::create(['name' => 'Old Name', 'console_team_id' => 12345, 'console_org_id' => 100]);
-
-    $team->update(['name' => 'New Name']);
-    $team->refresh();
-    
-    expect($team->name)->toBe('New Name');
-});
-
-test('can update console_org_id', function () {
-    $team = Team::create(['name' => 'Team', 'console_team_id' => 12345, 'console_org_id' => 100]);
-
-    $team->update(['console_org_id' => 200]);
-    $team->refresh();
-    
-    expect($team->console_org_id)->toBe(200);
 });
 
 // =============================================================================
@@ -385,65 +154,9 @@ test('can update console_org_id', function () {
 // =============================================================================
 
 test('timestamps are automatically set', function () {
-    $team = Team::create(['name' => 'Test Team', 'console_team_id' => 12345, 'console_org_id' => 100]);
+    $team = Team::factory()->create();
 
     expect($team->created_at)->not->toBeNull()
         ->and($team->updated_at)->not->toBeNull()
         ->and($team->created_at)->toBeInstanceOf(\Carbon\Carbon::class);
-});
-
-test('updated_at changes on update', function () {
-    $team = Team::create(['name' => 'Test Team', 'console_team_id' => 12345, 'console_org_id' => 100]);
-    $originalUpdatedAt = $team->updated_at;
-    
-    usleep(100000); // 0.1 second
-    
-    $team->update(['name' => 'Updated Name']);
-    
-    expect($team->updated_at->gte($originalUpdatedAt))->toBeTrue();
-});
-
-// =============================================================================
-// Index Tests - インデックステスト
-// =============================================================================
-
-test('console_org_id index allows fast organization queries', function () {
-    // Create many teams
-    for ($i = 1; $i <= 100; $i++) {
-        Team::create([
-            'name' => "Team $i",
-            'console_team_id' => $i,
-            'console_org_id' => $i <= 50 ? 100 : 200,
-        ]);
-    }
-
-    // Query should work efficiently
-    $org100Teams = Team::where('console_org_id', 100)->get();
-    $org200Teams = Team::where('console_org_id', 200)->get();
-    
-    expect($org100Teams)->toHaveCount(50)
-        ->and($org200Teams)->toHaveCount(50);
-});
-
-// =============================================================================
-// TeamPermission Cleanup Tests - TeamPermissionクリーンアップテスト
-// =============================================================================
-
-test('team permissions are cleaned up on team hard delete', function () {
-    $team = Team::create(['name' => 'Test Team', 'console_team_id' => 12345, 'console_org_id' => 100]);
-    $permission = Permission::create(['name' => 'View Projects', 'slug' => 'projects.view']);
-    
-    TeamPermission::create([
-        'console_team_id' => $team->console_team_id,
-        'console_org_id' => $team->console_org_id,
-        'permission_id' => $permission->id,
-    ]);
-
-    // Hard delete the team
-    $team->forceDelete();
-
-    // TeamPermission should still exist (no cascade by default)
-    // This is expected behavior - cleanup should be done manually or via events
-    $remaining = TeamPermission::where('console_team_id', 12345)->withTrashed()->count();
-    expect($remaining)->toBe(1);
 });

@@ -96,7 +96,7 @@ class OrgAccessService
     /**
      * Clear teams cache for user.
      */
-    public function clearTeamsCache(int $userId, ?string $orgSlug = null): void
+    public function clearTeamsCache(int|string $userId, ?string $orgSlug = null): void
     {
         if ($orgSlug) {
             Cache::forget("sso:user_teams:{$userId}:{$orgSlug}");

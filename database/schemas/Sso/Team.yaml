@@ -1,9 +1,7 @@
-# yaml-language-server: $schema=../../../../../node_modules/.omnify/combined-schema.json
-# Team schema - synced from Console
-# Can be used standalone or merged with main Team.yaml if exists
+# Team - cached from Console API
+# Stores basic team info for local lookup
 
-kind: partial
-target: Team
+kind: object
 
 displayName:
   ja: チーム
@@ -13,13 +11,14 @@ displayName:
 options:
   timestamps: true
   softDelete: true
+  idType: Uuid
   indexes:
     - columns: [console_org_id]
 
 properties:
+  # Console reference
   console_team_id:
-    type: BigInt
-    unsigned: true
+    type: Uuid
     unique: true
     displayName:
       ja: Console Team ID
@@ -31,8 +30,7 @@ properties:
       vi: ID nhóm từ Console
 
   console_org_id:
-    type: BigInt
-    unsigned: true
+    type: Uuid
     displayName:
       ja: Console Organization ID
       en: Console Organization ID
@@ -42,6 +40,7 @@ properties:
       en: Organization ID from Console
       vi: ID tổ chức từ Console
 
+  # Cached basic info (synced from Console)
   name:
     type: String
     length: 100
@@ -49,6 +48,3 @@ properties:
       ja: チーム名
       en: Team Name
       vi: Tên nhóm
-
-  # Note: Team permissions are managed through TeamPermission model
-  # which uses console_team_id for Console integration

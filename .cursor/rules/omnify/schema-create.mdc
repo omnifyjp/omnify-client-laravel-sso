@@ -1,0 +1,440 @@
+---
+description: "Step-by-step schema creation workflow: 1) Read guide, 2) Create YAML, 3) npx omnify generate, 4) Validate output, 5) Migrate. CRITICAL: String defaults must be plain values without quotes wrapper!"
+globs: ["schemas/**/*.yaml", "schemas/**/*.yml", "database/migrations/**"]
+alwaysApply: false
+---
+
+# Omnify Schema Creation Workflow
+
+> **Usage:** Mention `@schema-create` in chat OR this rule auto-applies when editing schema files
+
+## 📋 Workflow Steps
+
+```
+┌─────────────────────────────────────────────────────────────────┐
+│  1. READ GUIDE     →  Read schema guide documentation           │
+│  2. CREATE SCHEMA  →  Create/modify YAML schema file            │
+│  3. GENERATE       →  Run `npx omnify generate`                 │
+│  4. VALIDATE       →  Check generated code matches requirements │
+│  5. MIGRATE        →  Run database migration                    │
+└─────────────────────────────────────────────────────────────────┘
+```
+
+---
+
+## Step 1: Read Schema Guide 📖
+
+**MUST READ before creating schema:**
+
+```bash
+# Read the schema guide
+cat .claude/omnify/guides/omnify/schema-guide.md
+# OR
+cat packages/omnify/ai-guides/schema-guide.md
+```
+
+**Key Documentation:**
+- Schema syntax and property types
+- Relationships (belongsTo, hasMany, etc.)
+- Validation rules (nullable, minLength, maxLength)
+- Display names (ja, en, vi)
+- Special types (JapaneseName, JapaneseAddress, etc.)
+
+---
+
+## Step 2: Create Schema 📝
+
+### Schema File Location
+
+```
+schemas/
+├── {domain}/           # Group by domain
+│   ├── {Model}.yaml    # PascalCase filename
+│   └── {Enum}.yaml     # Enum schemas
+└── shared/             # Shared enums/types
+```
+
+### Basic Schema Template
+
+```yaml
+# schemas/{domain}/{ModelName}.yaml
+name: ModelName
+kind: object
+
+displayName:
+  ja: モデル名
+  en: Model Name
+
+options:
+  timestamps: true      # created_at, updated_at
+  softDelete: false     # deleted_at
+
+properties:
+  # Required field
+  name:
+    type: String
+    length: 100
+    displayName:
+      ja: 名前
+      en: Name
+    placeholder:
+      ja: 例：田中太郎
+      en: e.g. John Doe
+
+  # Optional field
+  description:
+    type: Text
+    nullable: true
+    displayName:
+      ja: 説明
+      en: Description
+
+  # Enum field
+  status:
+    type: OrderStatus
+    default: pending
+    displayName:
+      ja: ステータス
+      en: Status
+
+  # Relationship
+  category:
+    type: Category
+    relation: belongsTo
+    nullable: true
+```
+
+### From SQL/Database Requirements
+
+When creating schema from SQL or database design:
+
+```yaml
+# SQL: VARCHAR(255) NOT NULL
+property_name:
+  type: String
+  length: 255
+
+# SQL: VARCHAR(100) NULL
+property_name:
+  type: String
+  length: 100
+  nullable: true
+
+# SQL: TEXT
+property_name:
+  type: Text
+
+# SQL: INT / BIGINT
+property_name:
+  type: Int  # or BigInt
+
+# SQL: DECIMAL(10,2)
+property_name:
+  type: Float
+
+# SQL: BOOLEAN DEFAULT false
+property_name:
+  type: Boolean
+  default: false
+
+# SQL: DATE
+property_name:
+  type: Date
+
+# SQL: DATETIME / TIMESTAMP
+property_name:
+  type: DateTime
+
+# SQL: ENUM('draft', 'published', 'archived')
+# → Create separate enum schema
+```
+
+---
+
+## Step 3: Generate Code 🔧
+
+```bash
+# Generate all code from schemas
+npx omnify generate
+```
+
+**What gets generated:**
+- TypeScript types & Zod schemas
+- Laravel migrations & models
+- API resources & controllers
+- Form requests & validation
+
+---
+
+## Step 4: Validate Generated Code ✅
+
+### ⚠️ CRITICAL for SQL-based schemas
+
+**If creating schema from SQL requirements, MUST verify:**
+
+```bash
+# 1. Check generated migration matches SQL design
+cat database/migrations/*_create_{table_name}_table.php
+
+# 2. Check TypeScript types match requirements
+cat resources/ts/omnify/schemas/{ModelName}.ts
+
+# 3. Check Laravel model relationships
+cat app/Models/{ModelName}.php
+```
+
+### Validation Checklist
+
+| Check          | What to Verify                               |
+| -------------- | -------------------------------------------- |
+| ✅ Column names | snake_case in migration matches schema       |
+| ✅ Column types | VARCHAR, TEXT, INT match schema types        |
+| ✅ Nullable     | NULL/NOT NULL matches `nullable: true/false` |
+| ✅ Defaults     | DEFAULT values match `default:` in schema    |
+| ✅ Foreign keys | Relationships generate correct FK            |
+| ✅ Indexes      | Required indexes are present                 |
+
+### If Generated Code is Wrong
+
+```
+┌─────────────────────────────────────────┐
+│  Generated code doesn't match SQL?      │
+│                                         │
+│  1. Fix the YAML schema                 │
+│  2. Run `npx omnify generate` again     │
+│  3. Verify generated code               │
+│  4. Repeat until correct                │
+└─────────────────────────────────────────┘
+```
+
+**Common fixes:**
+
+```yaml
+# Problem: Column should be nullable
+# Fix: Add nullable: true
+property_name:
+  type: String
+  nullable: true  # ← Add this
+
+# Problem: Wrong column length
+# Fix: Adjust length
+property_name:
+  type: String
+  length: 255  # ← Change this
+
+# Problem: Missing default value
+# Fix: Add default
+status:
+  type: OrderStatus
+  default: pending  # ← Add this
+
+# Problem: Wrong relationship type
+# Fix: Change relation
+category:
+  type: Category
+  relation: belongsTo  # belongsTo, hasMany, hasOne, belongsToMany
+```
+
+### ⚠️ CRITICAL: DB Functions NOT Allowed in Default
+
+```yaml
+# ❌ WRONG - DB functions are NOT allowed
+failed_at:
+  type: Timestamp
+  default: CURRENT_TIMESTAMP  # ERROR!
+
+# ✅ CORRECT - Use useCurrent option
+failed_at:
+  type: Timestamp
+  useCurrent: true            # Equivalent to CURRENT_TIMESTAMP
+
+updated_at:
+  type: Timestamp
+  useCurrent: true
+  useCurrentOnUpdate: true    # ON UPDATE CURRENT_TIMESTAMP
+
+# ❌ WRONG - UUID() function
+external_id:
+  type: Uuid
+  default: UUID()             # ERROR!
+
+# ✅ CORRECT - Static value or nullable
+external_id:
+  type: Uuid
+  nullable: true              # Let application generate
+```
+
+---
+
+## Step 5: Run Migration 🗄️
+
+```bash
+# Run migration
+php artisan migrate
+
+# If migration fails, rollback and fix
+php artisan migrate:rollback
+# Fix schema, regenerate, try again
+```
+
+---
+
+## 🔄 Complete Workflow Example
+
+```bash
+# 1. Read guide
+cat .claude/omnify/guides/omnify/schema-guide.md
+
+# 2. Create schema file
+# schemas/shop/Product.yaml
+
+# 3. Generate code
+npx omnify generate
+
+# 4. Validate (especially for SQL-based requirements)
+cat database/migrations/*_create_products_table.php
+# If wrong: fix schema → regenerate → validate again
+
+# 5. Run migration
+php artisan migrate
+```
+
+---
+
+## 📌 Quick Reference
+
+### Property Types
+
+| Type       | SQL      | TypeScript                |
+| ---------- | -------- | ------------------------- |
+| `String`   | VARCHAR  | `string`                  |
+| `Text`     | TEXT     | `string`                  |
+| `LongText` | LONGTEXT | `string`                  |
+| `Int`      | INT      | `number`                  |
+| `BigInt`   | BIGINT   | `number`                  |
+| `Float`    | DECIMAL  | `number`                  |
+| `Boolean`  | BOOLEAN  | `boolean`                 |
+| `Date`     | DATE     | `string`                  |
+| `DateTime` | DATETIME | `string`                  |
+| `Email`    | VARCHAR  | `string`                  |
+| `Url`      | VARCHAR  | `string`                  |
+| `Json`     | JSON     | `Record<string, unknown>` |
+
+### Japanese Compound Types
+
+| Type                  | Fields Generated                                                                                             |
+| --------------------- | ------------------------------------------------------------------------------------------------------------ |
+| `JapaneseName`        | `{prefix}_lastname`, `{prefix}_firstname`, `{prefix}_kana_lastname`, `{prefix}_kana_firstname`               |
+| `JapaneseAddress`     | `{prefix}_postal_code`, `{prefix}_prefecture`, `{prefix}_address1`, `{prefix}_address2`, `{prefix}_address3` |
+| `JapaneseBankAccount` | `{prefix}_bank_code`, `{prefix}_bank_name`, `{prefix}_branch_code`, etc.                                     |
+
+### Relationship Types
+
+| Relation        | Description | Foreign Key                        |
+| --------------- | ----------- | ---------------------------------- |
+| `belongsTo`     | N:1         | `{property}_id` on this table      |
+| `hasMany`       | 1:N         | `{this_model}_id` on related table |
+| `hasOne`        | 1:1         | `{this_model}_id` on related table |
+| `belongsToMany` | N:N         | Pivot table                        |
+
+---
+
+## ⚠️ Common Mistakes
+
+```yaml
+# ❌ CRITICAL: String defaults with quotes produce CURLY QUOTES!
+default: "'cloud'"     # ❌ Produces: ''cloud'' (broken!)
+default: "'member'"    # ❌ Produces: ''member'' (broken!)
+
+# ✅ CORRECT: Just the value, no quotes wrapper
+default: cloud         # ✅ Produces: 'cloud'
+default: member        # ✅ Produces: 'member'
+
+# ❌ Wrong: Missing displayName for non-English projects
+name:
+  type: String
+  # Missing displayName!
+
+# ✅ Correct: Always add displayName
+name:
+  type: String
+  displayName:
+    ja: 名前
+    en: Name
+
+# ❌ Wrong: Hardcoded enum values in property
+status:
+  type: String
+  enum: [draft, published]  # Don't do this
+
+# ✅ Correct: Create separate enum schema
+status:
+  type: PostStatus  # Reference enum schema
+```
+
+---
+
+## 🔌 Partial Schema (Package Extensions)
+
+Partial schemas allow packages to extend or provide default schemas.
+
+**Target = Filename** (no `target` field needed):
+
+```yaml
+# packages/sso-client/schemas/User.yaml
+kind: partial
+priority: 10  # Lower = higher priority
+
+properties:
+  sso_token:
+    type: String
+    nullable: true
+  console_user_id:
+    type: BigInt
+    nullable: true
+```
+
+### Behavior
+
+| Scenario                    | Result                      |
+| --------------------------- | --------------------------- |
+| Main app has `User.yaml`    | Partial merges into main    |
+| Main app has NO `User.yaml` | Partial becomes User schema |
+
+### Priority System
+
+```yaml
+priority: 10  # High (1-49): Core packages
+priority: 50  # Default: Feature modules  
+priority: 90  # Low (51-100): Customizations
+```
+
+**For detailed guide:** See `.claude/omnify/guides/omnify/partial-schema-guide.md`
+
+---
+
+## 📦 Load Schemas from Laravel Package
+
+Configure additional schema paths in `omnify.config.ts`:
+
+```typescript
+const config: OmnifyConfig = {
+  schemasDir: './schemas',
+
+  // Additional schema paths from packages
+  additionalSchemaPaths: [
+    {
+      path: './packages/your-package/database/schemas',
+      namespace: 'YourPackage',
+    },
+  ],
+
+  // ... other config
+};
+```
+
+Then generate:
+
+```bash
+npx omnify generate
+```

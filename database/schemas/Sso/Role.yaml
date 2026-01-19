@@ -1,9 +1,5 @@
-# yaml-language-server: $schema=../../../../../node_modules/.omnify/combined-schema.json
 # SSO Role Schema
-# Can be used standalone or merged with main Role.yaml if exists
-
-kind: partial
-target: Role
+kind: object
 
 displayName:
   ja: ロール
@@ -12,6 +8,7 @@ displayName:
 
 options:
   timestamps: true
+  idType: Uuid
 
 properties:
   name:

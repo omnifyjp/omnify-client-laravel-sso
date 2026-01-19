@@ -1,0 +1,242 @@
+{
+  "version": 2,
+  "updatedAt": "2026-01-19T11:15:13.898Z",
+  "driver": "mysql",
+  "schemas": {
+    "Branch": {
+      "name": "Branch",
+      "kind": "object",
+      "hash": "c7dd2f70f6d9d65fa75c9dbca5831597cfcdf23691cbd60ae62cae545cf6ebb7",
+      "relativePath": "Sso/Branch.yaml",
+      "modifiedAt": "2026-01-19T10:52:19.096Z",
+      "properties": {
+        "console_branch_id": {
+          "type": "Uuid",
+          "unique": true
+        },
+        "console_org_id": {
+          "type": "Uuid"
+        },
+        "code": {
+          "type": "String",
+          "length": 20
+        },
+        "name": {
+          "type": "String",
+          "length": 100
+        }
+      },
+      "idType": "Uuid",
+      "timestamps": true,
+      "softDelete": true,
+      "indexes": [
+        {
+          "columns": [
+            "console_org_id"
+          ],
+          "unique": false
+        },
+        {
+          "columns": [
+            "console_org_id",
+            "code"
+          ],
+          "unique": true
+        }
+      ]
+    },
+    "Permission": {
+      "name": "Permission",
+      "kind": "object",
+      "hash": "2a2c4bf6d98122f87cf1a0ef1ff352bcab6958ee085fdfc96aeff68bfb80bda9",
+      "relativePath": "Sso/Permission.yaml",
+      "modifiedAt": "2026-01-19T10:47:01.147Z",
+      "properties": {
+        "name": {
+          "type": "String",
+          "unique": true,
+          "length": 100
+        },
+        "slug": {
+          "type": "String",
+          "unique": true,
+          "length": 100
+        },
+        "group": {
+          "type": "String",
+          "nullable": true,
+          "length": 50
+        },
+        "roles": {
+          "type": "Association",
+          "relation": "ManyToMany",
+          "target": "Role",
+          "joinTable": "role_permissions"
+        }
+      },
+      "idType": "Uuid",
+      "timestamps": true
+    },
+    "Role": {
+      "name": "Role",
+      "kind": "object",
+      "hash": "7e4828017d3ec814a5515b133eb26a432fed2e17686923d15bc14207060f50f9",
+      "relativePath": "Sso/Role.yaml",
+      "modifiedAt": "2026-01-19T10:46:44.614Z",
+      "properties": {
+        "name": {
+          "type": "String",
+          "unique": true,
+          "length": 100
+        },
+        "slug": {
+          "type": "String",
+          "unique": true,
+          "length": 100
+        },
+        "description": {
+          "type": "Text",
+          "nullable": true
+        },
+        "level": {
+          "type": "Int",
+          "default": 0
+        },
+        "permissions": {
+          "type": "Association",
+          "relation": "ManyToMany",
+          "target": "Permission",
+          "joinTable": "role_permissions"
+        }
+      },
+      "idType": "Uuid",
+      "timestamps": true
+    },
+    "RolePermission": {
+      "name": "RolePermission",
+      "kind": "object",
+      "hash": "a4280e499713a942474760d462b750fd698798bc7904cd3f9f2834ae9c8958de",
+      "relativePath": "Sso/RolePermission.yaml",
+      "modifiedAt": "2026-01-19T10:46:47.833Z",
+      "properties": {
+        "role": {
+          "type": "Association",
+          "relation": "ManyToOne",
+          "target": "Role"
+        },
+        "permission": {
+          "type": "Association",
+          "relation": "ManyToOne",
+          "target": "Permission"
+        }
+      },
+      "idType": "Uuid",
+      "timestamps": true
+    },
+    "Team": {
+      "name": "Team",
+      "kind": "object",
+      "hash": "cae85811509f3166e17ff5475da17f4931158d3c15ab3292369e4d11f88dbf95",
+      "relativePath": "Sso/Team.yaml",
+      "modifiedAt": "2026-01-19T10:52:46.138Z",
+      "properties": {
+        "console_team_id": {
+          "type": "Uuid",
+          "unique": true
+        },
+        "console_org_id": {
+          "type": "Uuid"
+        },
+        "name": {
+          "type": "String",
+          "length": 100
+        }
+      },
+      "idType": "Uuid",
+      "timestamps": true,
+      "softDelete": true,
+      "indexes": [
+        {
+          "columns": [
+            "console_org_id"
+          ],
+          "unique": false
+        }
+      ]
+    },
+    "TeamPermission": {
+      "name": "TeamPermission",
+      "kind": "object",
+      "hash": "bda165f9694ae91dc1e968035a376bd6f2e11699ea8a81acefe3a9e785947edb",
+      "relativePath": "Sso/TeamPermission.yaml",
+      "modifiedAt": "2026-01-19T10:46:49.235Z",
+      "properties": {
+        "console_org_id": {
+          "type": "Uuid"
+        },
+        "console_team_id": {
+          "type": "Uuid"
+        },
+        "permission": {
+          "type": "Association",
+          "relation": "ManyToOne",
+          "target": "Permission"
+        }
+      },
+      "idType": "Uuid",
+      "timestamps": true,
+      "softDelete": true,
+      "indexes": [
+        {
+          "columns": [
+            "console_org_id",
+            "console_team_id"
+          ],
+          "unique": false
+        }
+      ]
+    },
+    "User": {
+      "name": "User",
+      "kind": "object",
+      "hash": "fbdf5d284423617ab2d5f00563b0dfc905f0fe9e7ad17d2a9faf488e994bfd84",
+      "relativePath": "Sso/User.yaml",
+      "modifiedAt": "2026-01-19T10:54:58.115Z",
+      "properties": {
+        "name": {
+          "type": "String"
+        },
+        "email": {
+          "type": "String",
+          "unique": true
+        },
+        "console_user_id": {
+          "type": "Uuid",
+          "nullable": true,
+          "unique": true
+        },
+        "console_access_token": {
+          "type": "Text",
+          "nullable": true
+        },
+        "console_refresh_token": {
+          "type": "Text",
+          "nullable": true
+        },
+        "console_token_expires_at": {
+          "type": "Timestamp",
+          "nullable": true
+        },
+        "roles": {
+          "type": "Association",
+          "relation": "ManyToMany",
+          "target": "Role",
+          "joinTable": "role_user"
+        }
+      },
+      "idType": "Uuid",
+      "timestamps": true
+    }
+  },
+  "migrations": []
+}

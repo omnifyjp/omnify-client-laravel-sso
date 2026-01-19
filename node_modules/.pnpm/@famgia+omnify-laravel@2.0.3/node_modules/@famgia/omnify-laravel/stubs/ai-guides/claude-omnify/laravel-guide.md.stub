@@ -1,0 +1,61 @@
+# Laravel Generator Guide
+
+## Generated Files
+
+### Migrations
+Located in `database/migrations/omnify/`
+- Auto-generated from schema changes
+- Handles column additions, modifications, removals
+- Preserves manual migrations outside omnify folder
+
+### Models
+Two-tier model structure:
+- `app/Models/OmnifyBase/*BaseModel.php` - Auto-generated, DO NOT EDIT
+- `app/Models/*.php` - User models, extend base models, safe to customize
+
+### Factories
+Located in `database/factories/`
+- Generated once, safe to customize
+- Uses appropriate Faker methods for each type
+
+## Model Features
+
+### Fillable
+All schema properties are mass-assignable by default.
+Use `fillable: false` to exclude.
+
+### Hidden
+Use `hidden: true` to exclude from JSON/array output.
+
+```yaml
+password:
+  type: Password
+  hidden: true
+```
+
+### Casts
+Auto-generated based on property types:
+- `Boolean` → `'boolean'`
+- `Json` → `'array'`
+- `Timestamp` → `'datetime'`
+
+### Relationships
+Generated from Association properties:
+- `ManyToOne` → `belongsTo()`
+- `OneToMany` → `hasMany()`
+- `ManyToMany` → `belongsToMany()`
+- `MorphTo` → `morphTo()`
+- `MorphMany` → `morphMany()`
+
+## Commands
+
+```bash
+# Generate migrations and models
+npx omnify generate
+
+# Force regeneration
+npx omnify generate --force
+
+# Validate schemas
+npx omnify validate
+```

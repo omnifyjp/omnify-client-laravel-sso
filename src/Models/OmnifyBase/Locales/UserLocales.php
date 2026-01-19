@@ -39,21 +39,6 @@ class UserLocales
             'en' => 'Email',
             'vi' => 'Email',
         ],
-        'email_verified_at' => [
-            'ja' => 'メール確認日時',
-            'en' => 'Email Verified At',
-            'vi' => 'Ngày xác thực email',
-        ],
-        'password' => [
-            'ja' => 'パスワード',
-            'en' => 'Password',
-            'vi' => 'Mật khẩu',
-        ],
-        'remember_token' => [
-            'ja' => 'リメンバートークン',
-            'en' => 'Remember Token',
-            'vi' => 'Token ghi nhớ',
-        ],
         'console_user_id' => [
             'ja' => 'Console User ID',
             'en' => 'Console User ID',
@@ -74,9 +59,9 @@ class UserLocales
             'en' => 'Console Token Expiry',
             'vi' => 'Hạn Token Console',
         ],
-        'role' => [
+        'roles' => [
             'ja' => 'ロール',
-            'en' => 'Role',
+            'en' => 'Roles',
             'vi' => 'Vai trò',
         ],
     ];

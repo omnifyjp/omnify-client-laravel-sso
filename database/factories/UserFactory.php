@@ -4,8 +4,7 @@ namespace Omnify\SsoClient\Database\Factories;
 
 use Omnify\SsoClient\Models\User;
 use Illuminate\Database\Eloquent\Factories\Factory;
-
-use Omnify\SsoClient\Models\Role;
+use Illuminate\Support\Str;
 
 /**
  * @extends Factory<User>
@@ -22,16 +21,34 @@ class UserFactory extends Factory
     public function definition(): array
     {
         return [
-            'name' => fake()->sentence(3),
+            'name' => fake()->name(),
             'email' => fake()->unique()->safeEmail(),
-            'email_verified_at' => fake()->dateTime(),
-            'password' => fake()->sentence(),
-            'remember_token' => \Illuminate\Support\Str::random(32),
-            'console_user_id' => fake()->unique()->numberBetween(1, 1000000),
-            'console_access_token' => fake()->paragraphs(3, true),
-            'console_refresh_token' => fake()->paragraphs(3, true),
-            'console_token_expires_at' => fake()->dateTime(),
-            'role_id' => Role::query()->inRandomOrder()->first()?->id,
+            'console_user_id' => (string) Str::uuid(),
+            'console_access_token' => Str::random(100),
+            'console_refresh_token' => Str::random(100),
+            'console_token_expires_at' => now()->addHour(),
         ];
+    }
+
+    /**
+     * User without console tokens (new user).
+     */
+    public function withoutTokens(): static
+    {
+        return $this->state(fn () => [
+            'console_access_token' => null,
+            'console_refresh_token' => null,
+            'console_token_expires_at' => null,
+        ]);
+    }
+
+    /**
+     * User with expired tokens.
+     */
+    public function withExpiredTokens(): static
+    {
+        return $this->state(fn () => [
+            'console_token_expires_at' => now()->subHour(),
+        ]);
     }
 }

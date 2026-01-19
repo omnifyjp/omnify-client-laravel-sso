@@ -1,0 +1,673 @@
+# TypeScript Types Guide
+
+> This guide defines where and how to define types in this project.
+
+## Type Categories
+
+| Category            | Location             | Generated | Example                       |
+| ------------------- | -------------------- | --------- | ----------------------------- |
+| **Model**           | `@/types/model`      | ✅ Omnify  | `User`, `Post`                |
+| **Create/Update**   | `@/types/model`      | ✅ Omnify  | `UserCreate`, `UserUpdate`    |
+| **Common**          | `@/types/model`      | ✅ Omnify  | `DateTimeString`, `LocaleMap` |
+| **Validation**      | `@/types/model`      | ✅ Omnify  | `getUserRules(locale)`        |
+| **Enum**            | `@/types/model/enum` | ✅ Omnify  | `PostStatus`, `UserRole`      |
+| **API Params**      | Service file         | ❌ Manual  | `UserListParams`              |
+| **API Response**    | `@/lib/api.ts`       | ❌ Manual  | `PaginatedResponse<T>`        |
+| **Component Props** | Component file       | ❌ Manual  | `UserTableProps`              |
+
+---
+
+## 1. Model Types (Omnify)
+
+**Location**: `src/types/model/`
+
+**Source**: Auto-generated from `.omnify/schemas/`
+
+```typescript
+// ✅ Import from @/types/model
+import type { User, UserCreate, UserUpdate } from "@/types/model";
+import type { DateTimeString } from "@/types/model";
+import { getUserRules } from "@/types/model";
+
+// ❌ DON'T define model types manually
+interface User { ... }  // WRONG - already generated
+```
+
+### Structure
+
+```
+src/types/model/
+├── common.ts                ❌ DO NOT EDIT
+│                            # LocaleMap, ValidationRule, DateTimeString
+├── base/                    ❌ DO NOT EDIT
+│   └── User.ts              # User + UserCreate + UserUpdate
+├── rules/                   ❌ DO NOT EDIT
+│   └── User.rules.ts        # getUserRules(), getUserDisplayName()
+├── enum/                    ❌ DO NOT EDIT (if exists)
+│   └── PostStatus.ts
+├── index.ts                 ❌ DO NOT EDIT (re-exports)
+└── User.ts                  ✅ CAN EDIT (extension)
+```
+
+### Generated Types Per Model
+
+```typescript
+// Auto-generated in base/User.ts:
+interface User {
+  id: number;
+  name: string;
+  email: string;
+  created_at?: DateTimeString;  // Uses DateTimeString
+  updated_at?: DateTimeString;
+}
+
+type UserCreate = Omit<User, 'id' | 'created_at' | 'updated_at'>;
+type UserUpdate = Partial<UserCreate>;
+```
+
+### Extending Model Types
+
+```typescript
+// src/types/model/User.ts (safe to edit)
+import type { User as UserBase } from "./base/User";
+
+export interface User extends UserBase {
+  // Frontend-only computed properties
+  fullName?: string;
+  
+  // UI state
+  isSelected?: boolean;
+}
+```
+
+---
+
+## 2. Enum Types (CRITICAL)
+
+**Location**: Depends on your `omnify.config.ts` output path:
+- Default: `@/omnify/enum/` (if omnify is inside resources/ts)
+- Alternative: `@omnify/enum/` (if omnify has its own alias)
+
+**ALWAYS use generated Enums - NEVER inline union types!**
+
+### Generated Enum Structure
+
+```typescript
+// [omnify_path]/enum/ApprovalStatus.ts (auto-generated)
+
+// 1. Enum type
+export enum ApprovalStatus {
+  Pending = "pending",
+  Approved = "approved",
+  Rejected = "rejected",
+  Cancelled = "cancelled",
+}
+
+// 2. Values array (for iteration)
+export const ApprovalStatusValues = [
+  ApprovalStatus.Pending,
+  ApprovalStatus.Approved,
+  ApprovalStatus.Rejected,
+  ApprovalStatus.Cancelled,
+] as const;
+
+// 3. Type guard
+export function isApprovalStatus(value: unknown): value is ApprovalStatus {
+  return ApprovalStatusValues.includes(value as ApprovalStatus);
+}
+
+// 4. i18n label getter
+export function getApprovalStatusLabel(value: ApprovalStatus, locale: string): string {
+  // Returns localized label
+}
+```
+
+### ❌ FORBIDDEN Patterns
+
+```typescript
+// ❌ Complex type extraction - FORBIDDEN!
+const status = value as NonNullable<ListParams["filter"]>["status"];
+
+// ❌ Hardcoded union type - NOT DRY!
+const status: "pending" | "approved" | "rejected" = "pending";
+
+// ❌ String type - NO TYPE SAFETY!
+const [status, setStatus] = useState<string>("");
+
+// ❌ Hardcoded string comparisons
+if (status === "pending") { ... }
+```
+
+### ✅ REQUIRED Patterns
+
+```typescript
+// ✅ Import from generated enum file
+import { 
+  ApprovalStatus, 
+  ApprovalStatusValues,
+  isApprovalStatus,
+  getApprovalStatusLabel 
+} from "@/omnify/enum/ApprovalStatus";
+
+// ✅ Type assertions
+const status = unknownValue as ApprovalStatus;
+
+// ✅ State with Enum
+const [status, setStatus] = useState<ApprovalStatus | "">(""); 
+const [status, setStatus] = useState<ApprovalStatus>(ApprovalStatus.Pending);
+
+// ✅ Enum comparisons
+if (status === ApprovalStatus.Pending) { ... }
+
+// ✅ Iterate with Values array
+const options = ApprovalStatusValues.map(value => ({
+  value,
+  label: getApprovalStatusLabel(value, locale)
+}));
+
+// ✅ Type guard
+if (isApprovalStatus(value)) {
+  // value is ApprovalStatus
+}
+```
+
+### Select/Filter Options Pattern
+
+```typescript
+import { 
+  ApprovalStatus, 
+  ApprovalStatusValues, 
+  getApprovalStatusLabel 
+} from "@/omnify/enum/ApprovalStatus";
+import { useLocale } from "next-intl";
+
+function StatusFilter() {
+  const locale = useLocale();
+  
+  // ✅ Build options from generated enum
+  const statusOptions = ApprovalStatusValues.map(value => ({
+    value,
+    label: getApprovalStatusLabel(value, locale)
+  }));
+  
+  // ✅ State with Enum type
+  const [status, setStatus] = useState<ApprovalStatus | "all">("all");
+
+  return (
+    <Select
+      value={status}
+      onChange={setStatus}
+      options={[
+        { value: "all", label: t("common.all") },
+        ...statusOptions
+      ]}
+    />
+  );
+}
+```
+
+### Filter Params with Enum
+
+```typescript
+import { ApprovalStatus } from "@/omnify/enum/ApprovalStatus";
+
+interface AttendanceListParams {
+  filter?: {
+    approval_status?: ApprovalStatus;  // ✅ Use Enum type
+  };
+}
+
+// ✅ Type assertion with Enum
+const handleStatusChange = (value: string) => {
+  setFilters(prev => ({
+    ...prev,
+    filter: {
+      ...prev.filter,
+      approval_status: value as ApprovalStatus  // ✅ Not inline union type!
+    }
+  }));
+};
+```
+
+---
+
+## 3. Using Generated Types
+
+### Create/Update Types
+
+```typescript
+// ✅ Use Omnify-generated types
+import type { User, UserCreate, UserUpdate } from "@/types/model";
+
+const userService = {
+  create: (input: UserCreate) => api.post("/api/users", input),
+  update: (id: number, input: UserUpdate) => api.put(`/api/users/${id}`, input),
+};
+```
+
+### Validation Rules with Ant Design Form.Item
+
+```typescript
+import { userSchemas, getCustomerFieldLabel } from "@/types/model/User";
+import { zodRule } from "@/lib/form-validation";
+import { useLocale } from "next-intl";
+
+function UserForm() {
+  const locale = useLocale();
+  const label = (key: string) => getCustomerFieldLabel(key, locale);
+
+  return (
+    <Form>
+      {/* Name */}
+      <Form.Item 
+        name="name" 
+        label={label("name")}
+        rules={[zodRule(userSchemas.name, label("name"))]}
+      >
+        <Input />
+      </Form.Item>
+      
+      {/* Email */}
+      <Form.Item 
+        name="email" 
+        label={label("email")}
+        rules={[zodRule(userSchemas.email, label("email"))]}
+      >
+        <Input />
+      </Form.Item>
+    </Form>
+  );
+}
+```
+
+**Key Points:**
+- Import `{model}Schemas` for Zod validation schemas
+- Import `zodRule` from `@/lib/form-validation`
+- Use `zodRule(schema, displayName)` in Form.Item rules
+- Comment `{/* Field Name */}` before each Form.Item for clarity
+
+### DateTimeString
+
+```typescript
+import type { DateTimeString } from "@/types/model";
+import { formatDateTime } from "@/lib/dayjs";
+
+interface Event {
+  scheduled_at: DateTimeString;  // ISO 8601 UTC string
+}
+
+// Display
+formatDateTime(event.scheduled_at);  // "2024/01/15 19:30"
+```
+
+---
+
+## 3. API Params Types (Manual)
+
+**Location**: Service file (colocated)
+
+**Only define query params (not in Omnify):**
+
+```typescript
+// services/users.ts
+import type { User, UserCreate, UserUpdate } from "@/types/model";
+
+/** Query params for listing users (GET /api/users) */
+export interface UserListParams {
+  search?: string;
+  role?: string;
+  page?: number;
+  per_page?: number;
+  sort_by?: keyof User;
+  sort_order?: "asc" | "desc";
+}
+
+export const userService = {
+  list: (params?: UserListParams) => ...,
+  create: (input: UserCreate) => ...,      // ← Use Omnify type
+  update: (id: number, input: UserUpdate) => ...,  // ← Use Omnify type
+};
+```
+
+---
+
+## 4. API Response Types
+
+**Location**: `src/lib/api.ts`
+
+**Naming**: `{Name}Response`, `Paginated{Name}`
+
+```typescript
+// lib/api.ts
+
+/** Laravel paginated response */
+export interface PaginatedResponse<T> {
+  data: T[];
+  links: {
+    first: string | null;
+    last: string | null;
+    prev: string | null;
+    next: string | null;
+  };
+  meta: {
+    current_page: number;
+    from: number | null;
+    last_page: number;
+    per_page: number;
+    to: number | null;
+    total: number;
+  };
+}
+
+/** Laravel single resource response */
+export interface ResourceResponse<T> {
+  data: T;
+}
+
+/** Laravel validation error (422) */
+export interface ValidationError {
+  message: string;
+  errors: Record<string, string[]>;
+}
+```
+
+### Usage in Service
+
+```typescript
+import api, { PaginatedResponse } from "@/lib/api";
+import type { User } from "@/types/model";
+
+export const userService = {
+  list: async (params?: UserListParams): Promise<PaginatedResponse<User>> => {
+    const { data } = await api.get("/api/users", { params });
+    return data;
+  },
+};
+```
+
+---
+
+## 4. Component Props Types
+
+**Location**: Same file as component (inline)
+
+**Naming**: `{Component}Props`
+
+```typescript
+// components/tables/UserTable.tsx
+
+import type { User } from "@/types/model";
+import type { PaginatedResponse } from "@/lib/api";
+
+// ─────────────────────────────────────────────────────────────────
+// Props - Define at top of file
+// ─────────────────────────────────────────────────────────────────
+
+interface UserTableProps {
+  users: User[];
+  loading?: boolean;
+  pagination?: PaginatedResponse<User>["meta"];
+  onPageChange?: (page: number) => void;
+  onEdit?: (user: User) => void;
+  onDelete?: (user: User) => void;
+}
+
+// ─────────────────────────────────────────────────────────────────
+// Component
+// ─────────────────────────────────────────────────────────────────
+
+export function UserTable({
+  users,
+  loading = false,
+  pagination,
+  onPageChange,
+  onEdit,
+  onDelete,
+}: UserTableProps) {
+  return <Table ... />;
+}
+```
+
+### When to Export Props
+
+```typescript
+// ✅ Export if other components need it
+export interface UserTableProps { ... }
+
+// ✅ Don't export if only used internally
+interface UserTableProps { ... }
+```
+
+---
+
+## 5. Hook Types
+
+**Location**: Hook file (inline or inferred)
+
+**Approach**: Let TypeScript infer return types when possible
+
+```typescript
+// hooks/useUsers.ts
+
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { userService, UserCreateInput } from "@/services/users";
+import { queryKeys } from "@/lib/queryKeys";
+
+export function useUsers(params?: UserListParams) {
+  // Return type is inferred from userService.list
+  return useQuery({
+    queryKey: queryKeys.users.list(params),
+    queryFn: () => userService.list(params),
+  });
+}
+
+export function useCreateUser() {
+  const queryClient = useQueryClient();
+  
+  // Return type is inferred from useMutation
+  return useMutation({
+    mutationFn: (input: UserCreateInput) => userService.create(input),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.users.all });
+    },
+  });
+}
+```
+
+### When to Define Return Type
+
+```typescript
+// ✅ Let TypeScript infer (simpler, less maintenance)
+export function useUsers(params?: UserListParams) {
+  return useQuery({ ... });
+}
+
+// ✅ Define explicitly if complex or for documentation
+export function useAuth(): {
+  user: User | undefined;
+  isLoading: boolean;
+  login: (input: LoginInput) => Promise<void>;
+  logout: () => Promise<void>;
+} {
+  ...
+}
+```
+
+---
+
+## 6. Shared/Utility Types
+
+**Location**: `src/types/index.ts` (only if used across many files)
+
+```typescript
+// types/index.ts
+
+/** Common ID type */
+export type ID = number;
+
+/** Nullable type helper */
+export type Nullable<T> = T | null;
+
+/** Make specific keys optional */
+export type PartialBy<T, K extends keyof T> = Omit<T, K> & Partial<Pick<T, K>>;
+
+/** Extract array element type */
+export type ArrayElement<T> = T extends (infer U)[] ? U : never;
+```
+
+### When to Use Shared Types
+
+```typescript
+// ✅ Use shared types for truly common patterns
+import type { ID, Nullable } from "@/types";
+
+interface Post {
+  id: ID;
+  author_id: ID;
+  published_at: Nullable<string>;
+}
+
+// ❌ Don't over-abstract
+// Bad: Creating shared types for every little thing
+export type UserName = string;  // Just use string
+export type UserId = number;    // Just use number
+```
+
+---
+
+## Type Definition Checklist
+
+### Before Creating a Type
+
+1. **Is it a Model?** → Use `@/types/model` (Omnify)
+2. **Is it API input?** → Define in service file
+3. **Is it API response?** → Use/extend types in `lib/api.ts`
+4. **Is it component props?** → Define in component file
+5. **Is it used in 3+ places?** → Consider `types/index.ts`
+
+### Type Naming Conventions
+
+| Type         | Pattern              | Example             |
+| ------------ | -------------------- | ------------------- |
+| Model        | PascalCase           | `User`, `Post`      |
+| Create Input | `{Model}CreateInput` | `UserCreateInput`   |
+| Update Input | `{Model}UpdateInput` | `UserUpdateInput`   |
+| List Params  | `{Model}ListParams`  | `UserListParams`    |
+| Props        | `{Component}Props`   | `UserTableProps`    |
+| Response     | `{Name}Response`     | `PaginatedResponse` |
+
+---
+
+## Complete Example
+
+```typescript
+// ═══════════════════════════════════════════════════════════════════
+// types/model/User.ts (Omnify extension)
+// ═══════════════════════════════════════════════════════════════════
+import type { User as UserBase } from "./base/User";
+
+export interface User extends UserBase {
+  // Add frontend-only properties if needed
+}
+
+// ═══════════════════════════════════════════════════════════════════
+// services/users.ts
+// ═══════════════════════════════════════════════════════════════════
+import api, { PaginatedResponse } from "@/lib/api";
+import type { User } from "@/types/model";
+
+export interface UserCreateInput {
+  name: string;
+  email: string;
+  password: string;
+}
+
+export interface UserUpdateInput {
+  name?: string;
+  email?: string;
+}
+
+export interface UserListParams {
+  search?: string;
+  page?: number;
+}
+
+export const userService = {
+  list: async (params?: UserListParams): Promise<PaginatedResponse<User>> => {
+    const { data } = await api.get("/api/users", { params });
+    return data;
+  },
+  get: async (id: number): Promise<User> => {
+    const { data } = await api.get(`/api/users/${id}`);
+    return data.data ?? data;
+  },
+  create: async (input: UserCreateInput): Promise<User> => {
+    const { data } = await api.post("/api/users", input);
+    return data.data ?? data;
+  },
+  update: async (id: number, input: UserUpdateInput): Promise<User> => {
+    const { data } = await api.put(`/api/users/${id}`, input);
+    return data.data ?? data;
+  },
+  delete: async (id: number): Promise<void> => {
+    await api.delete(`/api/users/${id}`);
+  },
+};
+
+// ═══════════════════════════════════════════════════════════════════
+// components/tables/UserTable.tsx
+// ═══════════════════════════════════════════════════════════════════
+import type { User } from "@/types/model";
+
+interface UserTableProps {
+  users: User[];
+  loading?: boolean;
+  onEdit?: (user: User) => void;
+}
+
+export function UserTable({ users, loading, onEdit }: UserTableProps) {
+  return <Table dataSource={users} loading={loading} ... />;
+}
+
+// ═══════════════════════════════════════════════════════════════════
+// app/(dashboard)/users/page.tsx
+// ═══════════════════════════════════════════════════════════════════
+"use client";
+
+import { useQuery } from "@tanstack/react-query";
+import { userService, UserListParams } from "@/services/users";
+import { UserTable } from "@/components/tables/UserTable";
+import { queryKeys } from "@/lib/queryKeys";
+
+export default function UsersPage() {
+  const [params, setParams] = useState<UserListParams>({ page: 1 });
+  
+  const { data, isLoading } = useQuery({
+    queryKey: queryKeys.users.list(params),
+    queryFn: () => userService.list(params),
+  });
+
+  return (
+    <UserTable
+      users={data?.data ?? []}
+      loading={isLoading}
+      onEdit={(user) => router.push(`/users/${user.id}/edit`)}
+    />
+  );
+}
+```
+
+---
+
+## Summary
+
+| Type     | Location             | Why                       |
+| -------- | -------------------- | ------------------------- |
+| Model    | `@/types/model`      | Synced with DB via Omnify |
+| Input    | Service file         | Colocated with API logic  |
+| Response | `lib/api.ts`         | Shared Laravel patterns   |
+| Props    | Component file       | Colocated with component  |
+| Hook     | Hook file (inferred) | TypeScript handles it     |
+| Utility  | `types/index.ts`     | Only if widely used       |
+
+**Philosophy**: Keep types close to their usage. Don't over-organize.

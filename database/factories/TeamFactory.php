@@ -4,7 +4,7 @@ namespace Omnify\SsoClient\Database\Factories;
 
 use Omnify\SsoClient\Models\Team;
 use Illuminate\Database\Eloquent\Factories\Factory;
-
+use Illuminate\Support\Str;
 
 /**
  * @extends Factory<Team>
@@ -21,9 +21,19 @@ class TeamFactory extends Factory
     public function definition(): array
     {
         return [
-            'console_team_id' => fake()->unique()->numberBetween(1, 1000000),
-            'console_org_id' => fake()->numberBetween(1, 1000),
-            'name' => fake()->sentence(3),
+            'console_team_id' => (string) Str::uuid(),
+            'console_org_id' => (string) Str::uuid(),
+            'name' => fake()->company() . ' Team',
         ];
+    }
+
+    /**
+     * Team belonging to a specific organization.
+     */
+    public function forOrganization(string $orgId): static
+    {
+        return $this->state(fn () => [
+            'console_org_id' => $orgId,
+        ]);
     }
 }

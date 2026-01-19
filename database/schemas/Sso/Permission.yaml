@@ -1,9 +1,5 @@
-# yaml-language-server: $schema=../../../../../node_modules/.omnify/combined-schema.json
 # SSO Permission Schema
-# Can be used standalone or merged with main Permission.yaml if exists
-
-kind: partial
-target: Permission
+kind: object
 
 displayName:
   ja: 権限
@@ -12,6 +8,7 @@ displayName:
 
 options:
   timestamps: true
+  idType: Uuid
 
 properties:
   name:

@@ -4,6 +4,7 @@ namespace Omnify\SsoClient\Database\Factories;
 
 use Omnify\SsoClient\Models\Branch;
 use Illuminate\Database\Eloquent\Factories\Factory;
+use Illuminate\Support\Str;
 
 /**
  * @extends Factory<Branch>
@@ -15,27 +16,31 @@ class BranchFactory extends Factory
     public function definition(): array
     {
         return [
-            'console_branch_id' => fake()->unique()->numberBetween(1, 1000000),
-            'console_org_id' => fake()->numberBetween(1, 1000),
+            'console_branch_id' => (string) Str::uuid(),
+            'console_org_id' => (string) Str::uuid(),
             'code' => strtoupper(fake()->unique()->lexify('???')),
             'name' => fake()->company() . ' Branch',
-            'is_headquarters' => false,
-            'is_active' => true,
         ];
     }
 
-    public function headquarters(): static
+    /**
+     * Branch belonging to a specific organization.
+     */
+    public function forOrganization(string $orgId): static
     {
-        return $this->state(fn (array $attributes) => [
-            'code' => 'HQ',
-            'is_headquarters' => true,
+        return $this->state(fn () => [
+            'console_org_id' => $orgId,
         ]);
     }
 
-    public function inactive(): static
+    /**
+     * Headquarters branch.
+     */
+    public function headquarters(): static
     {
-        return $this->state(fn (array $attributes) => [
-            'is_active' => false,
+        return $this->state(fn () => [
+            'code' => 'HQ',
+            'name' => 'Headquarters',
         ]);
     }
 }

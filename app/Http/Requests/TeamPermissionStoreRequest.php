@@ -1,0 +1,68 @@
+<?php
+
+/**
+ * TeamPermission Store Request
+ *
+ * SAFE TO EDIT - This file is never overwritten by Omnify.
+ */
+
+namespace App\Http\Requests;
+
+use OpenApi\Attributes as OA;
+use App\Http\Requests\OmnifyBase\TeamPermissionStoreRequestBase;
+
+#[OA\Schema(
+    schema: 'TeamPermissionStoreRequest',
+    required: ['console_org_id', 'console_team_id', 'permission_id'],
+    properties: [
+        new OA\Property(property: 'console_org_id', type: 'string', example: 1),
+        new OA\Property(property: 'console_team_id', type: 'string', example: 1),
+        new OA\Property(property: 'permission_id', type: 'integer', example: 1),
+    ]
+)]
+class TeamPermissionStoreRequest extends TeamPermissionStoreRequestBase
+{
+    /**
+     * Determine if the user is authorized to make this request.
+     */
+    public function authorize(): bool
+    {
+        return true;
+    }
+
+    /**
+     * Get the validation rules that apply to the request.
+     *
+     * @return array<string, array<int, mixed>>
+     */
+    public function rules(): array
+    {
+        return array_merge($this->schemaRules(), [
+            // Custom/override rules here
+        ]);
+    }
+
+    /**
+     * Get custom attributes for validator errors.
+     *
+     * @return array<string, string>
+     */
+    public function attributes(): array
+    {
+        return array_merge($this->schemaAttributes(), [
+            // Custom attributes here
+        ]);
+    }
+
+    /**
+     * Get custom messages for validator errors.
+     *
+     * @return array<string, string>
+     */
+    public function messages(): array
+    {
+        return [
+            // Custom messages here
+        ];
+    }
+}

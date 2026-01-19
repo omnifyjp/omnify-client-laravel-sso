@@ -112,7 +112,7 @@ class SsoLogger
     /**
      * Log token refresh.
      */
-    public function tokenRefresh(int $userId, bool $success, ?string $error = null): void
+    public function tokenRefresh(int|string $userId, bool $success, ?string $error = null): void
     {
         if (! $this->enabled) {
             return;
@@ -137,7 +137,7 @@ class SsoLogger
     /**
      * Log logout event.
      */
-    public function logout(int $userId, bool $global = false): void
+    public function logout(int|string $userId, bool $global = false): void
     {
         if (! $this->enabled) {
             return;

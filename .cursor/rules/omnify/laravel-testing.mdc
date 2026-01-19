@@ -1,0 +1,138 @@
+---
+description: "PEST testing guide: 正常系 (happy path) + 異常系 (error cases), Japanese naming conventions, RefreshDatabase trait, and factory usage. Apply when writing or reviewing tests."
+globs: ["tests/**/*.php"]
+alwaysApply: false
+---
+
+# Testing Rules (PEST)
+
+> **Agent:** Act as **@tester** agent
+> - Read `.claude/omnify/guides/laravel/testing.md` for full guide
+
+## How to Run Tests
+
+```bash
+# Run ALL tests (from project root - uses Docker wrapper)
+./artisan test
+
+# Run specific test file
+./artisan test --filter=UserControllerTest
+
+# Run specific test method
+./artisan test --filter="creates user with valid data"
+
+# Run with coverage (if xdebug installed)
+./artisan test --coverage
+```
+
+> **Note:** The root `./artisan` script is a wrapper that runs commands inside Docker container.
+
+## Testing Process
+
+1. **Before writing tests:**
+   - Read the Controller to understand endpoints
+   - Read the Request to understand validation rules
+   - Read the Resource to understand response structure
+
+2. **Write tests covering:**
+   - 正常系 (Normal cases) - success scenarios
+   - 異常系 (Abnormal cases) - failure scenarios
+
+3. **Run tests to verify:**
+   ```bash
+   cd backend && ./artisan test
+   ```
+
+4. **All tests must pass before committing**
+
+## Critical Rules
+
+1. **PEST Syntax** - Use `describe()` + `it()`, not PHPUnit
+2. **正常系 + 異常系** - Cover both success and failure
+3. **Naming** - Use `正常:` and `異常:` prefixes
+4. **Coverage** - All endpoints, all validation rules
+5. **RefreshDatabase** - MUST use for SQLite in-memory
+
+## Database Trait - IMPORTANT
+
+```php
+// ✅ CORRECT - Use RefreshDatabase for SQLite in-memory
+use Illuminate\Foundation\Testing\RefreshDatabase;
+uses(RefreshDatabase::class);
+
+// ❌ WRONG - DatabaseTransactions doesn't run migrations
+use Illuminate\Foundation\Testing\DatabaseTransactions;
+uses(DatabaseTransactions::class);  // Will fail with "no such table"
+```
+
+| Trait                  | When to Use                       | Notes                           |
+| ---------------------- | --------------------------------- | ------------------------------- |
+| `RefreshDatabase`      | SQLite in-memory (default)        | Runs migrations, then truncates |
+| `DatabaseTransactions` | MySQL/PostgreSQL with existing DB | Only wraps in transaction       |
+
+## Test Naming
+
+```php
+// 正常系 (Normal) - success behavior
+it('正常: returns paginated users')
+it('正常: creates user with valid data')
+it('正常: deletes user')
+
+// 異常系 (Abnormal) - failure behavior
+it('異常: fails to create user with missing email')
+it('異常: fails to create user with invalid kana format')
+it('異常: returns 404 when user not found')
+it('異常: returns 401 when not authenticated')
+```
+
+## Coverage Matrix
+
+| Endpoint | 正常系             | 異常系                |
+| -------- | ------------------ | --------------------- |
+| index    | List, filter, sort | Empty, invalid params |
+| store    | Creates → 201      | 422 (each field)      |
+| show     | Returns → 200      | 404                   |
+| update   | Updates → 200      | 404, 422              |
+| destroy  | Deletes → 204      | 404                   |
+
+## Template
+
+```php
+describe('POST /api/users', function () {
+    // 正常系
+    it('正常: creates user with valid data', function () {
+        $response = $this->postJson('/api/users', validUserData());
+        
+        $response->assertCreated();
+        $this->assertDatabaseHas('users', ['email' => 'test@example.com']);
+    });
+    
+    // 異常系 - Required fields
+    it('異常: fails to create user with missing email', function () {
+        $data = validUserData();
+        unset($data['email']);
+        
+        $this->postJson('/api/users', $data)
+            ->assertUnprocessable()
+            ->assertJsonValidationErrors(['email']);
+    });
+    
+    // 異常系 - Format validation
+    it('異常: fails to create user with invalid email format', function () {
+        $this->postJson('/api/users', validUserData(['email' => 'invalid']))
+            ->assertUnprocessable()
+            ->assertJsonValidationErrors(['email']);
+    });
+});
+```
+
+## Japanese Field Tests
+
+```php
+it('異常: fails with hiragana in kana field', function () {
+    $this->postJson('/api/users', validUserData([
+        'name_kana_lastname' => 'たなか'  // hiragana - should fail
+    ]))->assertUnprocessable()
+       ->assertJsonValidationErrors(['name_kana_lastname']);
+});
+```

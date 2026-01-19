@@ -21,13 +21,13 @@ abstract class BaseModel extends Model
      * Model class map for polymorphic relations.
      */
     protected static array $modelMap = [
-        'User' => \Omnify\SsoClient\Models\User::class,
         'Branch' => \Omnify\SsoClient\Models\Branch::class,
         'Permission' => \Omnify\SsoClient\Models\Permission::class,
         'Role' => \Omnify\SsoClient\Models\Role::class,
         'RolePermission' => \Omnify\SsoClient\Models\RolePermission::class,
         'Team' => \Omnify\SsoClient\Models\Team::class,
         'TeamPermission' => \Omnify\SsoClient\Models\TeamPermission::class,
+        'User' => \Omnify\SsoClient\Models\User::class,
     ];
 
     /**

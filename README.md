@@ -5,14 +5,14 @@ Laravel package for Single Sign-On (SSO) integration with Omnify Console, featur
 ## Features
 
 - **SSO Authentication** - JWT-based authentication with Omnify Console
-- **ServiceInstance Support** - Supports Console's multi-instance architecture
+- **UUID Support** - All models use UUID primary keys (compatible with Console)
 - **Role-Based Access Control (RBAC)** - Flexible role and permission management
-- **Team Permissions** - Organization-level permission management
+- **Team Permissions** - Organization-level permission management via Console
+- **Minimal Schema Design** - Only stores Console references, data is fetched from Console API
 - **Security** - Open redirect protection, input validation, rate limiting ready
 - **Logging** - Dedicated log channel for audit trails
-- **Multi-language** - i18n support for all model labels
-- **API Ready** - RESTful admin endpoints with OpenAPI documentation
-- **Omnify Auto-Discovery** - Automatically discovers all Omnify packages for CLI
+- **Multi-language** - i18n support (ja, en, vi)
+- **Omnify Schema-Driven** - Auto-generated models with Omnify
 
 ## Architecture
 
@@ -21,17 +21,20 @@ This package integrates with Omnify Console's **ServiceInstance** architecture:
 ```
 Console (SSO Provider)                    Your Service (SSO Client)
 ┌─────────────────────────────┐          ┌─────────────────────────┐
-│ Service: "your-service"     │          │                         │
-│                             │          │  Uses: service_slug     │
-│ ServiceInstance (per-org):  │◀────────▶│  JWT verification       │
-│   - client_id               │          │  Org-based access       │
-│   - client_secret           │          │                         │
-│   - environment             │          │                         │
-│   - allowed_redirect_uris   │          │                         │
+│ Users (UUID)                │          │ users                   │
+│ Organizations (UUID)        │◀────────▶│   console_user_id (UUID)│
+│ Teams (UUID)                │          │                         │
+│ Branches (UUID)             │          │ teams                   │
+│                             │          │   console_team_id (UUID)│
+│ Service: "your-service"     │          │   console_org_id (UUID) │
+│                             │          │                         │
+│ ServiceInstance (per-org):  │          │ branches                │
+│   - client_id               │          │   console_branch_id     │
+│   - client_secret           │          │   console_org_id (UUID) │
 └─────────────────────────────┘          └─────────────────────────┘
 ```
 
-> **Note:** Your service only needs the `service_slug`. Console manages `client_id`/`client_secret` per organization through ServiceInstance.
+> **Design Philosophy:** This package only stores Console reference IDs. Full user/team/branch data is fetched from Console API when needed, ensuring data consistency.
 
 ## Requirements
 
@@ -44,7 +47,7 @@ Console (SSO Provider)                    Your Service (SSO Client)
 ### 1. Install
 
 ```bash
-composer require famgia/omnify-sso-client
+composer require omnifyjp/omnify-client-laravel-sso
 ```
 
 ### 2. Configure Environment
@@ -59,8 +62,6 @@ SSO_LOG_CHANNEL=sso
 SSO_LOGGING_ENABLED=true
 ```
 
-> **Note:** No `client_id`/`client_secret` required on service side. Console manages credentials per-organization via ServiceInstance.
-
 ### 3. Run Migrations
 
 ```bash
@@ -73,25 +74,83 @@ php artisan migrate
 php artisan sso:install
 ```
 
-This command will:
-- Publish configuration files
-- Create/update your User model to extend the package's User
+## Models
 
-## Documentation
+All models use **UUID** primary keys for compatibility with Console.
 
-| Document                                 | Description                   |
-| ---------------------------------------- | ----------------------------- |
-| [Installation](docs/installation.md)     | Detailed installation guide   |
-| [Configuration](docs/configuration.md)   | All configuration options     |
-| [Authentication](docs/authentication.md) | SSO flow and JWT verification |
-| [Authorization](docs/authorization.md)   | RBAC, roles, and permissions  |
-| [Middleware](docs/middleware.md)         | Available middleware          |
-| [API Reference](docs/api.md)             | Admin API endpoints           |
-| [Logging](docs/logging.md)               | SSO event logging             |
-| [Security](docs/security.md)             | Security features             |
-| [Testing](docs/testing.md)               | Testing guide                 |
+| Model            | Description                       | Console Reference                            |
+| ---------------- | --------------------------------- | -------------------------------------------- |
+| `User`           | SSO user with Console integration | `console_user_id` (UUID)                     |
+| `Branch`         | Branch reference from Console     | `console_branch_id`, `console_org_id` (UUID) |
+| `Team`           | Team reference from Console       | `console_team_id`, `console_org_id` (UUID)   |
+| `TeamPermission` | Team-level permissions            | `console_team_id`, `console_org_id` (UUID)   |
+| `Role`           | Local role with level hierarchy   | -                                            |
+| `Permission`     | Local permission                  | -                                            |
+| `RolePermission` | Role-Permission pivot             | -                                            |
 
-## Quick Examples
+### User Model Fields
+
+```php
+// SSO fields only - basic auth fields come from your main User schema
+$fillable = [
+    'console_user_id',       // UUID - links to Console User
+    'console_access_token',  // Encrypted access token
+    'console_refresh_token', // Encrypted refresh token
+    'console_token_expires_at',
+    'role_id',              // UUID - local role assignment
+];
+```
+
+### Branch/Team Model Fields
+
+```php
+// Only Console references - full data fetched from Console API
+$fillable = [
+    'console_branch_id',  // UUID - links to Console Branch
+    'console_org_id',     // UUID - links to Console Organization
+];
+```
+
+## Omnify Schema Integration
+
+This package uses Omnify for schema-driven development. Schemas are designed as `kind: object` with minimal fields:
+
+```yaml
+# database/schemas/Sso/User.yaml
+kind: object
+
+options:
+  timestamps: true
+  idType: Uuid
+
+properties:
+  console_user_id:
+    type: Uuid
+    unique: true
+    nullable: true
+    
+  console_access_token:
+    type: Text
+    nullable: true
+    
+  # ... other SSO fields
+  
+  role:
+    type: Association
+    relation: ManyToOne
+    target: Role
+```
+
+### Generate Models
+
+```bash
+# In your project
+npx omnify generate
+
+# Output: Auto-discovered packages from .omnify-packages.json
+```
+
+## Usage Examples
 
 ### Authentication Flow
 
@@ -103,23 +162,12 @@ $loginUrl = "https://console.omnify.jp/sso/authorize?" . http_build_query([
 ]);
 
 // After login, Console redirects back with code
-// POST /api/sso/callback
-{
-    "code": "authorization_code_from_console"
-}
-
-// Response
-{
-    "user": { "id": 1, "email": "user@example.com", "name": "User" },
-    "organizations": [...]
-}
+// POST /api/sso/callback { "code": "authorization_code" }
 ```
 
 ### Check Permissions
 
 ```php
-use Omnify\SsoClient\Models\User;
-
 $user = auth()->user();
 
 // Check single permission
@@ -129,11 +177,6 @@ if ($user->hasPermission('users.create')) {
 
 // Check any permission
 if ($user->hasAnyPermission(['users.create', 'users.update'])) {
-    // ...
-}
-
-// Check all permissions
-if ($user->hasAllPermissions(['users.create', 'users.update'])) {
     // ...
 }
 
@@ -151,7 +194,6 @@ if (Gate::allows('users.create')) {
 ### Protect Routes
 
 ```php
-// In routes/api.php
 Route::middleware(['sso.auth', 'sso.permission:users.create'])->group(function () {
     Route::post('/users', [UserController::class, 'store']);
 });
@@ -162,107 +204,56 @@ Route::middleware(['sso.auth', 'sso.role:admin'])->group(function () {
 });
 ```
 
-### Logging
+### Fetch Data from Console
 
 ```php
-use function sso_log;
+use Omnify\SsoClient\Services\ConsoleApiService;
 
-// Log custom events
-sso_log()->info('Custom event', ['user_id' => $user->id]);
+$consoleApi = app(ConsoleApiService::class);
 
-// Built-in logging (automatic)
-// - Authentication attempts
-// - JWT verification
-// - Security events
-// - API errors
-```
+// Get user details from Console
+$consoleUser = $consoleApi->getUser($user->console_user_id);
 
-## Omnify Auto-Discovery
+// Get organization teams
+$teams = $consoleApi->getOrganizationTeams($orgId);
 
-This package includes a Composer plugin that automatically discovers all Omnify-enabled packages in your project.
-
-### How It Works
-
-After `composer install` or `composer update`, the plugin scans all installed packages for `extra.omnify` configuration and generates `.omnify-packages.json`:
-
-```json
-{
-    "version": 1,
-    "packages": {
-        "omnifyjp/omnify-client-laravel-sso": {
-            "schemas": "/path/to/vendor/omnifyjp/omnify-client-laravel-sso/database/schemas",
-            "namespace": "Sso",
-            "priority": 50
-        }
-    }
-}
-```
-
-### Usage with Omnify CLI
-
-The Omnify CLI automatically reads this manifest:
-
-```bash
-npx omnify generate
-# Output: Auto-discovered 1 package(s) from .omnify-packages.json
-```
-
-### Creating Omnify-Enabled Packages
-
-To make your package discoverable, add `extra.omnify` to your `composer.json`:
-
-```json
-{
-    "extra": {
-        "omnify": {
-            "schemas": "database/schemas",
-            "namespace": "YourPackage",
-            "priority": 100,
-            "options": {
-                "modelNamespace": "Vendor\\YourPackage\\Models",
-                "generateMigrations": false
-            }
-        }
-    }
-}
+// Get branch details
+$branch = $consoleApi->getBranch($branchId);
 ```
 
 ## Package Structure
 
 ```
-omnify-sso-client/
+omnify-client-laravel-sso/
 ├── config/
 │   └── sso-client.php          # Configuration
 ├── database/
 │   ├── factories/              # Model factories
-│   ├── migrations/             # Database migrations
-│   └── schemas/                # Omnify schema definitions
-├── docs/                       # Documentation
-├── routes/
-│   └── sso.php                 # Package routes
+│   ├── migrations/             # Database migrations  
+│   └── schemas/Sso/            # Omnify schema definitions
+│       ├── User.yaml           # SSO fields for User
+│       ├── Branch.yaml         # Console branch reference
+│       ├── Team.yaml           # Console team reference
+│       ├── TeamPermission.yaml # Team permissions
+│       ├── Role.yaml           # Local roles
+│       ├── Permission.yaml     # Local permissions
+│       └── RolePermission.yaml # Role-Permission pivot
 ├── src/
-│   ├── Cache/                  # Cache services
-│   ├── Console/Commands/       # Artisan commands
-│   ├── Exceptions/             # Custom exceptions
-│   ├── Http/
-│   │   ├── Controllers/        # API controllers
-│   │   └── Middleware/         # Route middleware
-│   ├── Models/                 # Eloquent models
-│   ├── Services/               # Business logic
-│   └── Support/                # Helper classes
+│   ├── Models/
+│   │   ├── OmnifyBase/         # Auto-generated base models (UUID support)
+│   │   ├── User.php            # User model
+│   │   ├── Branch.php          # Branch model
+│   │   ├── Team.php            # Team model
+│   │   └── ...
+│   ├── Services/
+│   │   ├── ConsoleApiService.php    # Console API client
+│   │   ├── ConsoleTokenService.php  # Token management
+│   │   └── ...
+│   └── Http/
+│       ├── Controllers/        # API controllers
+│       └── Middleware/         # Route middleware
 └── tests/                      # Test suite
 ```
-
-## Models
-
-| Model            | Description                                  |
-| ---------------- | -------------------------------------------- |
-| `User`           | Laravel-compatible user with SSO integration |
-| `Role`           | Role with level hierarchy                    |
-| `Permission`     | Individual permission                        |
-| `RolePermission` | Role-Permission pivot                        |
-| `Team`           | Console team/organization                    |
-| `TeamPermission` | Team-level permissions                       |
 
 ## Available Commands
 
@@ -277,29 +268,22 @@ php artisan sso:sync-permissions
 php artisan sso:cleanup-orphan-teams
 ```
 
+## Documentation
+
+| Document                                 | Description                   |
+| ---------------------------------------- | ----------------------------- |
+| [Installation](docs/installation.md)     | Detailed installation guide   |
+| [Configuration](docs/configuration.md)   | All configuration options     |
+| [Authentication](docs/authentication.md) | SSO flow and JWT verification |
+| [Authorization](docs/authorization.md)   | RBAC, roles, and permissions  |
+| [Middleware](docs/middleware.md)         | Available middleware          |
+| [API Reference](docs/api.md)             | Admin API endpoints           |
+
 ## Testing
 
 ```bash
-# Run all tests
 ./vendor/bin/pest
-
-# Run specific test file
-./vendor/bin/pest tests/Feature/Security/SsoSecurityTest.php
-
-# Run with coverage
-./vendor/bin/pest --coverage
 ```
-
-Current test coverage: **490 tests, 947 assertions**
-
-## Contributing
-
-1. Fork the repository
-2. Create your feature branch (`git checkout -b feature/amazing-feature`)
-3. Write tests for your changes
-4. Commit your changes (`git commit -m 'Add amazing feature'`)
-5. Push to the branch (`git push origin feature/amazing-feature`)
-6. Open a Pull Request
 
 ## License
 
@@ -308,4 +292,4 @@ MIT License. See [LICENSE](LICENSE) for more information.
 ## Credits
 
 - [Omnify Team](https://omnify.jp)
-- Generated with [Omnify](https://github.com/ecsol/omnify-ts)
+- Generated with [Omnify](https://github.com/famgia/omnify)

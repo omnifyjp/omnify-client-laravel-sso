@@ -20,6 +20,7 @@ use Illuminate\Database\Eloquent\Relations\MorphToMany;
 use Illuminate\Database\Eloquent\Collection as EloquentCollection;
 use Omnify\SsoClient\Models\OmnifyBase\Traits\HasLocalizedDisplayName;
 use Omnify\SsoClient\Models\OmnifyBase\Locales\PermissionLocales;
+use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Omnify\SsoClient\Models\Role;
 
 /**
@@ -33,7 +34,7 @@ use Omnify\SsoClient\Models\Role;
 class PermissionBaseModel extends BaseModel
 {
     use HasLocalizedDisplayName;
-
+    use HasUuids;
     /**
      * The table associated with the model.
      */
@@ -44,6 +45,16 @@ class PermissionBaseModel extends BaseModel
      */
     protected $primaryKey = 'id';
 
+    /**
+     * The "type" of the primary key ID.
+     */
+    protected $keyType = 'string';
+
+
+    /**
+     * Indicates if the IDs are auto-incrementing.
+     */
+    public $incrementing = false;
 
 
     /**

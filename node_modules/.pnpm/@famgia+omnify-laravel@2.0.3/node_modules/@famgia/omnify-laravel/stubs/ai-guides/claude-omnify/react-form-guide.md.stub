@@ -1,0 +1,259 @@
+# Omnify React Form Guide
+
+This guide explains how to build forms using Omnify generated schemas with **Ant Design** and **TanStack Query**.
+
+## Quick Start
+
+```tsx
+import { Form } from 'antd';
+import { useFormMutation } from '@/omnify/hooks';
+import { type CustomerCreate } from '@/omnify/schemas';
+import { CustomerForm } from '@/features/customers';
+import { api } from '@/lib/api';
+
+function CreateCustomerPage() {
+  const [form] = Form.useForm<CustomerCreate>();
+
+  const mutation = useFormMutation<CustomerCreate>({
+    form,
+    mutationFn: (data) => api.post('/customers', data),
+    invalidateKeys: [['customers']],
+    successMessage: 'Customer created successfully',
+    onSuccess: () => form.resetFields(),
+  });
+
+  return (
+    <CustomerForm
+      form={form}
+      onSubmit={mutation.mutate}
+      loading={mutation.isPending}
+    />
+  );
+}
+```
+
+## useFormMutation Hook
+
+Location: `resources/ts/omnify/hooks/use-form-mutation.ts`
+
+### Usage with Types
+
+```tsx
+import { useFormMutation } from '@/omnify/hooks';
+import { type CustomerCreate } from '@/omnify/schemas';
+
+// With type parameter for type safety
+const mutation = useFormMutation<CustomerCreate>({
+  form,
+  mutationFn: (data) => api.post('/customers', data),
+  invalidateKeys: [['customers']],
+  successMessage: 'Saved successfully',
+  onSuccess: () => form.resetFields(),
+});
+```
+
+### Options
+
+| Option | Type | Description |
+|--------|------|-------------|
+| `form` | `FormInstance<T>` | Ant Design form instance (required) |
+| `mutationFn` | `(data: T) => Promise` | API call function (required) |
+| `invalidateKeys` | `string[][]` | Query keys to invalidate on success |
+| `successMessage` | `string` | Toast message on success |
+| `onSuccess` | `(data) => void` | Callback after success |
+| `onError` | `(error) => void` | Callback after error |
+
+### Laravel Error Handling
+
+The hook automatically handles Laravel validation errors (422):
+
+```json
+{
+  "message": "The given data was invalid.",
+  "errors": {
+    "email": ["The email has already been taken."]
+  }
+}
+```
+
+## Japanese Form Components
+
+Omnify provides specialized components for Japanese data input.
+
+### OmnifyForm.JapaneseName
+
+```tsx
+import { OmnifyForm } from '@/omnify/components';
+
+<OmnifyForm.JapaneseName
+  schemas={customerSchemas}
+  i18n={customerI18n}
+  prefix="name"        // name_lastname, name_firstname, etc.
+  required             // Show required asterisk
+  showKana={true}      // Show kana fields (default)
+/>
+```
+
+**Fields:** `{prefix}_lastname`, `{prefix}_firstname`, `{prefix}_kana_lastname`, `{prefix}_kana_firstname`
+
+### OmnifyForm.JapaneseAddress
+
+```tsx
+import { OmnifyForm } from '@/omnify/components';
+
+<OmnifyForm.JapaneseAddress
+  form={form}
+  schemas={customerSchemas}
+  i18n={customerI18n}
+  prefix="address"
+  enablePostalLookup={true}  // Postal code → address lookup
+/>
+```
+
+**Fields:** `{prefix}_postal_code`, `{prefix}_prefecture`, `{prefix}_address1`, `{prefix}_address2`, `{prefix}_address3`
+
+**Options:**
+- `enablePostalLookup` - Enable postal code search
+- `autoSearch` - Auto-search when 7 digits entered
+- `usePrefectureId` - Use numeric ID instead of string enum
+
+### OmnifyForm.JapaneseBank
+
+```tsx
+import { OmnifyForm } from '@/omnify/components';
+
+<OmnifyForm.JapaneseBank
+  schemas={customerSchemas}
+  i18n={customerI18n}
+  prefix="bank"
+/>
+```
+
+**Fields:** `{prefix}_bank_code`, `{prefix}_branch_code`, `{prefix}_account_type`, `{prefix}_account_number`, `{prefix}_account_holder`
+
+Account type options auto-loaded from `BankAccountType` enum with i18n.
+
+## Complete Form Example
+
+```tsx
+import { Form, Input, Button, Card, Space, Divider } from 'antd';
+import type { FormInstance } from 'antd';
+import { zodRule, setZodLocale } from '@/omnify/lib';
+import { OmnifyForm } from '@/omnify/components';
+import {
+  type Customer, type CustomerCreate,
+  customerSchemas, customerI18n,
+  getCustomerFieldLabel, getCustomerFieldPlaceholder,
+} from '@/omnify/schemas';
+
+const LOCALE = 'ja';
+
+interface CustomerFormProps {
+  form: FormInstance<CustomerCreate>;
+  initialValues?: Partial<Customer>;
+  onSubmit: (values: CustomerCreate) => void;
+  loading?: boolean;
+  isEdit?: boolean;
+}
+
+export function CustomerForm({ form, initialValues, onSubmit, loading, isEdit }: CustomerFormProps) {
+  setZodLocale(LOCALE);
+
+  const label = (key: string) => getCustomerFieldLabel(key, LOCALE);
+  const placeholder = (key: string) => getCustomerFieldPlaceholder(key, LOCALE);
+  const rule = (key: keyof typeof customerSchemas) => zodRule(customerSchemas[key], label(key));
+
+  return (
+    <Card>
+      <Form form={form} layout="horizontal" labelCol={{ span: 6 }} wrapperCol={{ span: 18 }}
+            initialValues={initialValues} onFinish={onSubmit} style={{ maxWidth: 800 }}>
+        
+        <Divider orientation="left">Name</Divider>
+        <OmnifyForm.JapaneseName schemas={customerSchemas} i18n={customerI18n} prefix="name" required />
+
+        <Divider orientation="left">Contact</Divider>
+        <Form.Item name="phone" label={label('phone')} rules={[rule('phone')]}>
+          <Input placeholder={placeholder('phone')} />
+        </Form.Item>
+        <Form.Item name="email" label={label('email')} rules={[rule('email')]}>
+          <Input type="email" placeholder={placeholder('email')} />
+        </Form.Item>
+
+        <Divider orientation="left">Address</Divider>
+        <OmnifyForm.JapaneseAddress form={form} schemas={customerSchemas} i18n={customerI18n}
+                              prefix="address" enablePostalLookup={true} />
+
+        <Divider orientation="left">Bank Account</Divider>
+        <OmnifyForm.JapaneseBank schemas={customerSchemas} i18n={customerI18n} prefix="bank" />
+
+        <Form.Item wrapperCol={{ offset: 6, span: 18 }}>
+          <Space>
+            <Button type="primary" htmlType="submit" loading={loading}>
+              {isEdit ? 'Update' : 'Create'}
+            </Button>
+          </Space>
+        </Form.Item>
+      </Form>
+    </Card>
+  );
+}
+```
+
+## Zod Validation with i18n
+
+```tsx
+import { zodRule, setZodLocale } from '@/omnify/lib';
+
+// Set locale once at component level
+setZodLocale('ja');
+
+// Use zodRule for field validation
+<Form.Item name="email" label={label('email')} rules={[zodRule(customerSchemas.email, label('email'))]}>
+  <Input />
+</Form.Item>
+```
+
+## Kana Validation Rules
+
+```tsx
+import { kanaString, KATAKANA_PATTERN } from '@/omnify/lib/rules';
+
+// Full-width katakana (default)
+const kanaSchema = kanaString();
+
+// Custom options
+const kanaSchema = kanaString({
+  fullWidthKatakana: true,
+  hiragana: true,
+  allowNumbers: true,
+});
+```
+
+## File Structure
+
+```
+resources/ts/omnify/
+├── components/
+│   ├── JapaneseNameField.tsx
+│   ├── JapaneseAddressField.tsx
+│   └── JapaneseBankField.tsx
+├── enum/
+│   └── plugin/
+│       ├── Prefecture.ts
+│       └── BankAccountType.ts
+├── hooks/
+│   └── use-form-mutation.ts
+├── lib/
+│   ├── form-validation.ts
+│   ├── zod-i18n.ts
+│   └── rules/kana.ts
+└── schemas/
+```
+
+## Tips
+
+1. **Use type generics** - `useFormMutation<CustomerCreate>` for type safety
+2. **Use `setZodLocale`** - Call once for localized validation messages
+3. **Use OmnifyForm.* components** - Built-in i18n, validation, postal lookup
+4. **Set `invalidateKeys`** - Auto-refresh lists after mutations
+5. **Don't pass `form` to Name/Bank components** - Only Address needs it for postal lookup
