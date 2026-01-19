@@ -32,6 +32,7 @@ class SsoClientServiceProvider extends ServiceProvider
         // Enforce morph map for this package's models
         Relation::enforceMorphMap([
             'User' => \Omnify\SsoClient\Models\User::class,
+            'Branch' => \Omnify\SsoClient\Models\Branch::class,
             'Permission' => \Omnify\SsoClient\Models\Permission::class,
             'Role' => \Omnify\SsoClient\Models\Role::class,
             'RolePermission' => \Omnify\SsoClient\Models\RolePermission::class,

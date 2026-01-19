@@ -22,6 +22,7 @@ abstract class BaseModel extends Model
      */
     protected static array $modelMap = [
         'User' => \Omnify\SsoClient\Models\User::class,
+        'Branch' => \Omnify\SsoClient\Models\Branch::class,
         'Permission' => \Omnify\SsoClient\Models\Permission::class,
         'Role' => \Omnify\SsoClient\Models\Role::class,
         'RolePermission' => \Omnify\SsoClient\Models\RolePermission::class,
