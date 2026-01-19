@@ -4,6 +4,7 @@ use Illuminate\Support\Facades\Route;
 use Omnify\SsoClient\Http\Controllers\Admin\PermissionAdminController;
 use Omnify\SsoClient\Http\Controllers\Admin\RoleAdminController;
 use Omnify\SsoClient\Http\Controllers\Admin\TeamPermissionAdminController;
+use Omnify\SsoClient\Http\Controllers\SsoBranchController;
 use Omnify\SsoClient\Http\Controllers\SsoCallbackController;
 use Omnify\SsoClient\Http\Controllers\SsoReadOnlyController;
 use Omnify\SsoClient\Http\Controllers\SsoTokenController;
@@ -51,6 +52,9 @@ Route::prefix($prefix)
             Route::get('/roles/{id}', [SsoReadOnlyController::class, 'role']);
             Route::get('/permissions', [SsoReadOnlyController::class, 'permissions']);
             Route::get('/permission-matrix', [SsoReadOnlyController::class, 'permissionMatrix']);
+
+            // Branches - proxy from console
+            Route::get('/branches', [SsoBranchController::class, 'index']);
         });
     });
 
