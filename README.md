@@ -268,16 +268,55 @@ php artisan sso:sync-permissions
 php artisan sso:cleanup-orphan-teams
 ```
 
+## Database Seeders
+
+The package includes reusable seeders for roles and permissions:
+
+```php
+// In your DatabaseSeeder.php
+use Omnify\SsoClient\Database\Seeders\SsoRolesSeeder;
+
+$this->call(SsoRolesSeeder::class);
+```
+
+This creates:
+- **5 roles**: admin, manager, supervisor, member, viewer
+- **21 permissions**: service-admin.*, dashboard.*
+
+For app-specific permissions, use the provided traits:
+
+```php
+use Omnify\SsoClient\Database\Seeders\Concerns\AssignsRoles;
+use Omnify\SsoClient\Database\Seeders\Concerns\FetchesConsoleData;
+
+class PermissionSeeder extends Seeder
+{
+    use FetchesConsoleData, AssignsRoles;
+
+    public function run(): void
+    {
+        // Fetch org data dynamically from Console
+        $orgData = $this->fetchOrgDataFromConsole('your-org-slug');
+        
+        // Assign role to user
+        $this->assignRoleToUserByEmail('admin@example.com', 'admin', $orgData['org_id']);
+    }
+}
+```
+
+See [Seeders Documentation](docs/seeders.md) for full details.
+
 ## Documentation
 
-| Document                                 | Description                   |
-| ---------------------------------------- | ----------------------------- |
-| [Installation](docs/installation.md)     | Detailed installation guide   |
-| [Configuration](docs/configuration.md)   | All configuration options     |
-| [Authentication](docs/authentication.md) | SSO flow and JWT verification |
-| [Authorization](docs/authorization.md)   | RBAC, roles, and permissions  |
-| [Middleware](docs/middleware.md)         | Available middleware          |
-| [API Reference](docs/api.md)             | Admin API endpoints           |
+| Document                                 | Description                        |
+| ---------------------------------------- | ---------------------------------- |
+| [Installation](docs/installation.md)     | Detailed installation guide        |
+| [Configuration](docs/configuration.md)   | All configuration options          |
+| [Authentication](docs/authentication.md) | SSO flow and JWT verification      |
+| [Authorization](docs/authorization.md)   | RBAC, roles, and permissions       |
+| [Middleware](docs/middleware.md)         | Available middleware               |
+| [API Reference](docs/api.md)             | Admin API endpoints                |
+| [**Seeders**](docs/seeders.md)           | **Roles, permissions, and traits** |
 
 ## Testing
 

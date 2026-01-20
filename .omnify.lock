@@ -1,6 +1,6 @@
 {
   "version": 2,
-  "updatedAt": "2026-01-19T16:08:59.341Z",
+  "updatedAt": "2026-01-20T04:00:50.216Z",
   "driver": "mysql",
   "schemas": {
     "Branch": {
@@ -229,7 +229,7 @@
       "kind": "object",
       "hash": "bd5e0aa3bfce8c039f674024cc34474d41e56a5d76b2600b18024c124f68913b",
       "relativePath": "Sso/User.yaml",
-      "modifiedAt": "2026-01-19T15:39:35.670Z",
+      "modifiedAt": "2026-01-20T04:00:45.103Z",
       "properties": {
         "name": {
           "type": "String"
