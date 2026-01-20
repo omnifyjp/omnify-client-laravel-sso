@@ -49,5 +49,15 @@ class BranchLocales
             'en' => 'Branch Name',
             'vi' => 'Tên chi nhánh',
         ],
+        'is_headquarters' => [
+            'ja' => '本社',
+            'en' => 'Is Headquarters',
+            'vi' => 'Là trụ sở chính',
+        ],
+        'is_active' => [
+            'ja' => '有効',
+            'en' => 'Active',
+            'vi' => 'Hoạt động',
+        ],
     ];
 }

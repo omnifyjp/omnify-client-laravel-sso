@@ -173,21 +173,23 @@ test('can create role with unicode description', function () {
 // Permission Relationship Edge Cases - 権限リレーションのエッジケース
 // =============================================================================
 
-test('attaching same permission twice creates duplicate (no unique constraint)', function () {
+test('attaching same permission twice is rejected by unique constraint', function () {
     $role = Role::create(['name' => 'Admin', 'slug' => 'admin', 'level' => 100]);
     $permission = Permission::create(['name' => 'Create', 'slug' => 'create']);
 
     $role->permissions()->attach($permission->id);
-    $role->permissions()->attach($permission->id); // Duplicates allowed
-    
-    // Without unique constraint on pivot, duplicates are created
-    // This documents current behavior - may want to add unique constraint
+
+    // Unique constraint on pivot prevents duplicates
+    expect(fn () => $role->permissions()->attach($permission->id))
+        ->toThrow(\Illuminate\Database\QueryException::class);
+
+    // Only one record should exist
     $pivotCount = \DB::table('role_permissions')
         ->where('role_id', $role->id)
         ->where('permission_id', $permission->id)
         ->count();
-    
-    expect($pivotCount)->toBe(2);
+
+    expect($pivotCount)->toBe(1);
 });
 
 test('use syncWithoutDetaching to prevent duplicates', function () {
@@ -411,18 +413,22 @@ test('can recreate role with same slug after delete', function () {
 
 // =============================================================================
 // Relationship Integrity Edge Cases - リレーション整合性のエッジケース
+// NOTE: SSO uses many-to-many roles with scoping via role_user pivot
 // =============================================================================
 
-test('users with deleted role still exist', function () {
+test('users with deleted role still exist and have empty roles', function () {
     $role = Role::create(['name' => 'Temp Role', 'slug' => 'temp', 'level' => 10]);
-    $user = User::create(['name' => 'Test', 'email' => 'test@example.com', 'password' => 'p', 'role_id' => $role->id]);
-    
+    $user = User::create(['name' => 'Test', 'email' => 'test@example.com']);
+    $user->assignRole($role);
+
+    expect($user->roles)->toHaveCount(1);
+
     $role->delete();
     $user->refresh();
-    
-    // User exists but role is null
+
+    // User exists but role is gone (pivot remains orphaned until cleanup)
     expect(User::find($user->id))->not->toBeNull()
-        ->and($user->role)->toBeNull();
+        ->and($user->roles)->toBeEmpty();
 });
 
 // =============================================================================
@@ -430,10 +436,11 @@ test('users with deleted role still exist', function () {
 // =============================================================================
 
 test('can insert multiple roles in bulk', function () {
+    // When using insert(), UUIDs must be provided manually
     Role::insert([
-        ['name' => 'Admin', 'slug' => 'admin', 'level' => 100, 'created_at' => now(), 'updated_at' => now()],
-        ['name' => 'Editor', 'slug' => 'editor', 'level' => 50, 'created_at' => now(), 'updated_at' => now()],
-        ['name' => 'Member', 'slug' => 'member', 'level' => 10, 'created_at' => now(), 'updated_at' => now()],
+        ['id' => (string) \Illuminate\Support\Str::uuid(), 'name' => 'Admin', 'slug' => 'admin', 'level' => 100, 'created_at' => now(), 'updated_at' => now()],
+        ['id' => (string) \Illuminate\Support\Str::uuid(), 'name' => 'Editor', 'slug' => 'editor', 'level' => 50, 'created_at' => now(), 'updated_at' => now()],
+        ['id' => (string) \Illuminate\Support\Str::uuid(), 'name' => 'Member', 'slug' => 'member', 'level' => 10, 'created_at' => now(), 'updated_at' => now()],
     ]);
 
     expect(Role::count())->toBe(3);

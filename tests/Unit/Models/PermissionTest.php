@@ -27,7 +27,8 @@ test('can create permission with required fields', function () {
     expect($permission)->toBeInstanceOf(Permission::class)
         ->and($permission->name)->toBe('Create Posts')
         ->and($permission->slug)->toBe('posts.create')
-        ->and($permission->id)->toBeInt();
+        ->and($permission->id)->toBeString()
+        ->and($permission->id)->toMatch('/^[0-9a-f-]{36}$/');
 });
 
 test('can create permission with all fields', function () {
@@ -326,10 +327,11 @@ test('updated_at changes on update', function () {
 // =============================================================================
 
 test('can insert multiple permissions', function () {
+    // When using insert(), UUIDs must be provided manually
     Permission::insert([
-        ['name' => 'Create Posts', 'slug' => 'posts.create', 'group' => 'posts', 'created_at' => now(), 'updated_at' => now()],
-        ['name' => 'Edit Posts', 'slug' => 'posts.edit', 'group' => 'posts', 'created_at' => now(), 'updated_at' => now()],
-        ['name' => 'Delete Posts', 'slug' => 'posts.delete', 'group' => 'posts', 'created_at' => now(), 'updated_at' => now()],
+        ['id' => (string) \Illuminate\Support\Str::uuid(), 'name' => 'Create Posts', 'slug' => 'posts.create', 'group' => 'posts', 'created_at' => now(), 'updated_at' => now()],
+        ['id' => (string) \Illuminate\Support\Str::uuid(), 'name' => 'Edit Posts', 'slug' => 'posts.edit', 'group' => 'posts', 'created_at' => now(), 'updated_at' => now()],
+        ['id' => (string) \Illuminate\Support\Str::uuid(), 'name' => 'Delete Posts', 'slug' => 'posts.delete', 'group' => 'posts', 'created_at' => now(), 'updated_at' => now()],
     ]);
 
     expect(Permission::count())->toBe(3);

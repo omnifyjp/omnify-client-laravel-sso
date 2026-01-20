@@ -1,14 +1,14 @@
 {
   "version": 2,
-  "updatedAt": "2026-01-19T11:15:13.898Z",
+  "updatedAt": "2026-01-19T16:08:59.341Z",
   "driver": "mysql",
   "schemas": {
     "Branch": {
       "name": "Branch",
       "kind": "object",
-      "hash": "c7dd2f70f6d9d65fa75c9dbca5831597cfcdf23691cbd60ae62cae545cf6ebb7",
+      "hash": "f1a1b1a536898c412fbce3ff60a5f81cb69466d24f9aa89265c6f1d32301d8ed",
       "relativePath": "Sso/Branch.yaml",
-      "modifiedAt": "2026-01-19T10:52:19.096Z",
+      "modifiedAt": "2026-01-19T16:03:09.836Z",
       "properties": {
         "console_branch_id": {
           "type": "Uuid",
@@ -24,6 +24,14 @@
         "name": {
           "type": "String",
           "length": 100
+        },
+        "is_headquarters": {
+          "type": "Boolean",
+          "default": false
+        },
+        "is_active": {
+          "type": "Boolean",
+          "default": true
         }
       },
       "idType": "Uuid",
@@ -42,6 +50,20 @@
             "code"
           ],
           "unique": true
+        },
+        {
+          "columns": [
+            "console_org_id",
+            "is_active"
+          ],
+          "unique": false
+        },
+        {
+          "columns": [
+            "console_org_id",
+            "is_headquarters"
+          ],
+          "unique": false
         }
       ]
     },
@@ -115,9 +137,9 @@
     "RolePermission": {
       "name": "RolePermission",
       "kind": "object",
-      "hash": "a4280e499713a942474760d462b750fd698798bc7904cd3f9f2834ae9c8958de",
+      "hash": "3612d5985a35975511f239b3b966fd1a94afaaf7fbba3fc7de64f5335ded1f1c",
       "relativePath": "Sso/RolePermission.yaml",
-      "modifiedAt": "2026-01-19T10:46:47.833Z",
+      "modifiedAt": "2026-01-19T16:05:35.201Z",
       "properties": {
         "role": {
           "type": "Association",
@@ -130,8 +152,14 @@
           "target": "Permission"
         }
       },
-      "idType": "Uuid",
-      "timestamps": true
+      "id": false,
+      "timestamps": true,
+      "uniqueConstraints": [
+        [
+          "role",
+          "permission"
+        ]
+      ]
     },
     "Team": {
       "name": "Team",
@@ -199,9 +227,9 @@
     "User": {
       "name": "User",
       "kind": "object",
-      "hash": "fbdf5d284423617ab2d5f00563b0dfc905f0fe9e7ad17d2a9faf488e994bfd84",
+      "hash": "bd5e0aa3bfce8c039f674024cc34474d41e56a5d76b2600b18024c124f68913b",
       "relativePath": "Sso/User.yaml",
-      "modifiedAt": "2026-01-19T10:54:58.115Z",
+      "modifiedAt": "2026-01-19T15:39:35.670Z",
       "properties": {
         "name": {
           "type": "String"
@@ -231,7 +259,39 @@
           "type": "Association",
           "relation": "ManyToMany",
           "target": "Role",
-          "joinTable": "role_user"
+          "joinTable": "role_user",
+          "pivotFields": {
+            "console_org_id": {
+              "type": "String",
+              "length": 36,
+              "nullable": true,
+              "displayName": {
+                "ja": "組織ID",
+                "en": "Organization ID",
+                "vi": "ID tổ chức"
+              },
+              "description": {
+                "ja": "nullの場合はシステム全体に適用（グローバルスコープ）",
+                "en": "null means system-wide assignment (global scope)",
+                "vi": "null nghĩa là áp dụng toàn hệ thống (phạm vi toàn cục)"
+              }
+            },
+            "console_branch_id": {
+              "type": "String",
+              "length": 36,
+              "nullable": true,
+              "displayName": {
+                "ja": "ブランチID",
+                "en": "Branch ID",
+                "vi": "ID chi nhánh"
+              },
+              "description": {
+                "ja": "nullの場合は組織全体に適用（組織スコープ）。指定した場合は該当ブランチのみ（ブランチスコープ）",
+                "en": "null means org-wide assignment. When specified, applies only to that branch (branch scope)",
+                "vi": "null nghĩa là áp dụng toàn tổ chức. Khi chỉ định, chỉ áp dụng cho chi nhánh đó (phạm vi chi nhánh)"
+              }
+            }
+          }
         }
       },
       "idType": "Uuid",

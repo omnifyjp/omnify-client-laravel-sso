@@ -73,16 +73,20 @@ class Team extends TeamBaseModel
 
     /**
      * Find team by Console team ID.
+     *
+     * @param  string  $consoleTeamId  UUID string
      */
-    public static function findByConsoleId(int $consoleTeamId): ?self
+    public static function findByConsoleId(string $consoleTeamId): ?self
     {
         return static::where('console_team_id', $consoleTeamId)->first();
     }
 
     /**
      * Get teams by Console organization ID.
+     *
+     * @param  string  $consoleOrgId  UUID string
      */
-    public static function getByOrgId(int $consoleOrgId): \Illuminate\Database\Eloquent\Collection
+    public static function getByOrgId(string $consoleOrgId): \Illuminate\Database\Eloquent\Collection
     {
         return static::where('console_org_id', $consoleOrgId)->get();
     }

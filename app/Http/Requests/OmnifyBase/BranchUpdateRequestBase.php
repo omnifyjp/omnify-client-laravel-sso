@@ -33,6 +33,8 @@ abstract class BranchUpdateRequestBase extends FormRequest
             'console_org_id' => ['sometimes'],
             'code' => ['sometimes', 'string', 'max:20'],
             'name' => ['sometimes', 'string', 'max:100'],
+            'is_headquarters' => ['sometimes', 'boolean'],
+            'is_active' => ['sometimes', 'boolean'],
         ];
     }
 
@@ -48,6 +50,8 @@ abstract class BranchUpdateRequestBase extends FormRequest
             'console_org_id' => 'Console Organization ID',
             'code' => 'Branch Code',
             'name' => 'Branch Name',
+            'is_headquarters' => 'Is Headquarters',
+            'is_active' => 'Active',
         ];
     }
 }

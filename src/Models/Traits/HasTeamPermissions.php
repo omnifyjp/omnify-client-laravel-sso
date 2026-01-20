@@ -12,54 +12,115 @@ use Omnify\SsoClient\Services\OrgAccessService;
 /**
  * Trait for checking permissions from both Role and Teams.
  *
+ * Permission Resolution Flow (Branch-Level Permissions - Option B):
+ * 1. Get scoped role permissions (global + org-wide + branch-specific)
+ * 2. Get team permissions (org-scoped, unchanged)
+ * 3. Aggregate all permissions
+ *
  * Requires:
  * - HasConsoleSso trait
- * - service_role attribute (from SSO org access)
+ * - Scoped role methods from User model (getRolesForContext, etc.)
+ *
+ * @see https://csrc.nist.gov/Projects/Role-Based-Access-Control NIST RBAC Standard
+ * @see https://workos.com/blog/how-to-design-multi-tenant-rbac-saas WorkOS Multi-Tenant RBAC
  */
 trait HasTeamPermissions
 {
     /**
-     * Get all permissions for user (role + teams).
+     * Get all permissions for user in a specific context.
      *
-     * @param  string|int|null  $orgId  Organization ID (UUID string or int for legacy)
-     * @return array<string>
+     * Permission sources:
+     * 1. Role permissions (from scoped role assignments)
+     * 2. Team permissions (from Console teams in organization)
+     *
+     * @param  string|null  $orgId  Organization ID (console_org_id). Falls back to session.
+     * @param  string|null  $branchId  Branch ID (console_branch_id). Falls back to session. NEW!
+     * @return array<string> List of permission slugs
+     *
+     * @example
+     * // Get all permissions for current context (from session)
+     * $permissions = $user->getAllPermissions();
+     *
+     * // Get permissions for specific org (org-wide context)
+     * $permissions = $user->getAllPermissions($orgId);
+     *
+     * // Get permissions for specific branch context
+     * $permissions = $user->getAllPermissions($orgId, $branchId);
      */
-    public function getAllPermissions(string|int|null $orgId = null): array
+    public function getAllPermissions(?string $orgId = null, ?string $branchId = null): array
     {
-        $orgId = $orgId ?? session('current_org_id');
+        // Fall back to session/request values
+        $orgId = $orgId ?? session('current_org_id') ?? request()->attributes->get('orgId');
+        $branchId = $branchId ?? session('current_branch_id') ?? request()->attributes->get('branchId');
 
+        // Get scoped role permissions (includes global, org-wide, and branch-specific)
+        $rolePermissions = $this->getRolePermissions($orgId, $branchId);
+
+        // If no org context, return only role permissions
         if (! $orgId) {
-            return $this->getRolePermissions();
+            return $rolePermissions;
         }
 
-        $rolePermissions = $this->getRolePermissions();
+        // Get team permissions (org-scoped only, unchanged from before)
         $teamPermissions = $this->getTeamPermissions($orgId);
 
         return array_unique([...$rolePermissions, ...$teamPermissions]);
     }
 
     /**
-     * Get role permissions.
+     * Get role permissions for user in a specific context.
      *
-     * @return array<string>
+     * Aggregates permissions from all applicable roles:
+     * - Global roles (org=null, branch=null)
+     * - Org-wide roles (org=X, branch=null)
+     * - Branch-specific roles (org=X, branch=Y)
+     *
+     * @param  string|null  $orgId  Organization ID
+     * @param  string|null  $branchId  Branch ID
+     * @return array<string> List of permission slugs
+     *
+     * @example
+     * // Get permissions from global roles only
+     * $permissions = $user->getRolePermissions();
+     *
+     * // Get permissions including org-wide roles
+     * $permissions = $user->getRolePermissions($orgId);
+     *
+     * // Get permissions including branch-specific roles
+     * $permissions = $user->getRolePermissions($orgId, $branchId);
      */
-    public function getRolePermissions(): array
+    public function getRolePermissions(?string $orgId = null, ?string $branchId = null): array
     {
-        // Get service_role from session or request attribute
-        $serviceRole = session('service_role') ?? request()->attributes->get('serviceRole');
+        // Fall back to session/request values
+        $orgId = $orgId ?? session('current_org_id') ?? request()->attributes->get('orgId');
+        $branchId = $branchId ?? session('current_branch_id') ?? request()->attributes->get('branchId');
 
-        if (! $serviceRole) {
+        // Get applicable roles for this context using scoped role method
+        // This method is defined in User model
+        $roles = $this->getRolesForContext($orgId, $branchId);
+
+        if ($roles->isEmpty()) {
             return [];
         }
 
-        return RolePermissionCache::get($serviceRole);
+        // Aggregate permissions from all applicable roles
+        $permissions = [];
+        foreach ($roles as $role) {
+            $rolePermissions = RolePermissionCache::get($role->slug);
+            $permissions = array_merge($permissions, $rolePermissions);
+        }
+
+        return array_unique($permissions);
     }
 
     /**
      * Get team permissions for user in organization.
      *
+     * Note: Team permissions are org-scoped only (not branch-scoped).
+     * Branch-level access control is handled via scoped roles.
+     *
      * @param  string|int  $orgId  Organization ID (UUID string or int for legacy)
-     * @return array<string>
+     * @return array<string> List of permission slugs
      */
     public function getTeamPermissions(string|int $orgId): array
     {
@@ -75,24 +136,39 @@ trait HasTeamPermissions
     }
 
     /**
-     * Check if user has a specific permission (via role OR team).
+     * Check if user has a specific permission in context.
      *
-     * @param  string|int|null  $orgId  Organization ID (UUID string or int for legacy)
+     * @param  string  $permission  Permission slug to check
+     * @param  string|null  $orgId  Organization context
+     * @param  string|null  $branchId  Branch context (NEW!)
+     * @return bool
+     *
+     * @example
+     * // Check with current context (from session)
+     * $user->hasPermission('orders.create');
+     *
+     * // Check with explicit context
+     * $user->hasPermission('orders.create', $orgId, $branchId);
      */
-    public function hasPermission(string $permission, string|int|null $orgId = null): bool
+    public function hasPermission(string $permission, ?string $orgId = null, ?string $branchId = null): bool
     {
-        return in_array($permission, $this->getAllPermissions($orgId), true);
+        return in_array($permission, $this->getAllPermissions($orgId, $branchId), true);
     }
 
     /**
      * Check if user has any of the given permissions.
      *
-     * @param  array<string>  $permissions
-     * @param  string|int|null  $orgId  Organization ID (UUID string or int for legacy)
+     * @param  array<string>  $permissions  List of permission slugs
+     * @param  string|null  $orgId  Organization context
+     * @param  string|null  $branchId  Branch context (NEW!)
+     * @return bool True if user has at least one permission
+     *
+     * @example
+     * $user->hasAnyPermission(['orders.create', 'orders.update'], $orgId, $branchId);
      */
-    public function hasAnyPermission(array $permissions, string|int|null $orgId = null): bool
+    public function hasAnyPermission(array $permissions, ?string $orgId = null, ?string $branchId = null): bool
     {
-        $userPermissions = $this->getAllPermissions($orgId);
+        $userPermissions = $this->getAllPermissions($orgId, $branchId);
 
         foreach ($permissions as $permission) {
             if (in_array($permission, $userPermissions, true)) {
@@ -106,12 +182,17 @@ trait HasTeamPermissions
     /**
      * Check if user has all of the given permissions.
      *
-     * @param  array<string>  $permissions
-     * @param  string|int|null  $orgId  Organization ID (UUID string or int for legacy)
+     * @param  array<string>  $permissions  List of permission slugs
+     * @param  string|null  $orgId  Organization context
+     * @param  string|null  $branchId  Branch context (NEW!)
+     * @return bool True if user has all permissions
+     *
+     * @example
+     * $user->hasAllPermissions(['orders.create', 'orders.view'], $orgId, $branchId);
      */
-    public function hasAllPermissions(array $permissions, string|int|null $orgId = null): bool
+    public function hasAllPermissions(array $permissions, ?string $orgId = null, ?string $branchId = null): bool
     {
-        $userPermissions = $this->getAllPermissions($orgId);
+        $userPermissions = $this->getAllPermissions($orgId, $branchId);
 
         foreach ($permissions as $permission) {
             if (! in_array($permission, $userPermissions, true)) {
@@ -150,13 +231,17 @@ trait HasTeamPermissions
     /**
      * Clear permission cache for user.
      *
-     * @param  string|int|null  $orgId  Organization ID (UUID string or int for legacy)
+     * @param  string|null  $orgId  Organization ID
+     * @param  string|null  $branchId  Branch ID (for future cache granularity)
      */
-    public function clearPermissionCache(string|int|null $orgId = null): void
+    public function clearPermissionCache(?string $orgId = null, ?string $branchId = null): void
     {
         if ($orgId) {
             Cache::forget("sso:user_teams:{$this->id}:{$orgId}");
         }
+
+        // Note: Role permissions are cached by role slug, not user context.
+        // If needed, clear all role caches or implement user-specific role cache.
     }
 
     /**

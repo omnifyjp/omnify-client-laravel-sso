@@ -8,24 +8,43 @@ use Closure;
 use Illuminate\Http\Request;
 use Symfony\Component\HttpFoundation\Response;
 
+/**
+ * Middleware for checking user role level.
+ *
+ * Supports branch-level permissions via X-Branch-Id header context.
+ * Role check considers: global roles + org-wide roles + branch-specific roles.
+ *
+ * Uses role hierarchy: higher level = more privileged.
+ * Default levels: admin=100, manager=50, member=10
+ *
+ * @see User::getHighestRoleLevelInContext() For role level resolution
+ */
 class SsoRoleCheck
 {
     /**
      * Handle an incoming request.
      *
      * @param  \Closure(Request): Response  $next
-     * @param  string  $role  Required role name
+     * @param  string  $role  Required role name (user must have this role or higher level)
      */
     public function handle(Request $request, Closure $next, string $role): Response
     {
-        $userRole = $request->attributes->get('serviceRole');
+        $user = $request->user();
 
-        if (! $userRole) {
+        if (! $user) {
             return response()->json([
-                'error' => 'NO_SERVICE_ROLE',
-                'message' => 'User does not have a service role',
-            ], 403);
+                'error' => 'UNAUTHENTICATED',
+                'message' => 'Authentication required',
+            ], 401);
         }
+
+        // Get org and branch context from request attributes (set by SsoOrganizationAccess middleware)
+        $orgId = $request->attributes->get('orgId');
+        $branchId = $request->attributes->get('branchId'); // NEW: Branch context for branch-level permissions
+
+        // Cast to string for scoped role methods (orgId/branchId can be int or string depending on source)
+        $orgId = $orgId !== null ? (string) $orgId : null;
+        $branchId = $branchId !== null ? (string) $branchId : null;
 
         // Get role levels from config
         $roleLevels = config('sso-client.role_levels', [
@@ -35,14 +54,27 @@ class SsoRoleCheck
         ]);
 
         $requiredLevel = $roleLevels[$role] ?? 0;
-        $userLevel = $roleLevels[$userRole] ?? 0;
+
+        // Get user's highest role level in this context
+        // Uses scoped role assignment logic: global + org-wide + branch-specific
+        $userLevel = 0;
+
+        if (method_exists($user, 'getHighestRoleLevelInContext')) {
+            // New method: considers scoped role assignments
+            $userLevel = $user->getHighestRoleLevelInContext($orgId, $branchId);
+        } else {
+            // Fallback: use service role from Console (legacy behavior)
+            $userRole = $request->attributes->get('serviceRole');
+            $userLevel = $roleLevels[$userRole] ?? 0;
+        }
 
         if ($userLevel < $requiredLevel) {
             return response()->json([
                 'error' => 'INSUFFICIENT_ROLE',
                 'message' => "Role '{$role}' or higher is required",
                 'required_role' => $role,
-                'current_role' => $userRole,
+                'required_level' => $requiredLevel,
+                'current_level' => $userLevel,
             ], 403);
         }
 

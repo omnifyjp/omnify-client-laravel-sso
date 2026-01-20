@@ -205,20 +205,23 @@ test('permission can belong to multiple roles', function () {
     expect($permission->roles)->toHaveCount(10);
 });
 
-test('attaching same role twice creates duplicate (no unique constraint)', function () {
+test('attaching same role twice is rejected by unique constraint', function () {
     $permission = Permission::create(['name' => 'Test', 'slug' => 'test']);
     $role = Role::create(['name' => 'Admin', 'slug' => 'admin', 'level' => 100]);
-    
+
     $permission->roles()->attach($role->id);
-    $permission->roles()->attach($role->id); // Duplicates allowed
-    
-    // Without unique constraint on pivot, duplicates are created
+
+    // Unique constraint on pivot prevents duplicates
+    expect(fn () => $permission->roles()->attach($role->id))
+        ->toThrow(\Illuminate\Database\QueryException::class);
+
+    // Only one record should exist
     $pivotCount = \DB::table('role_permissions')
         ->where('role_id', $role->id)
         ->where('permission_id', $permission->id)
         ->count();
-    
-    expect($pivotCount)->toBe(2);
+
+    expect($pivotCount)->toBe(1);
 });
 
 test('can sync roles from permission side', function () {
@@ -307,11 +310,13 @@ test('can query permissions with role count', function () {
 
 test('slug uniqueness is case sensitive in SQLite', function () {
     Permission::create(['name' => 'Lower', 'slug' => 'test']);
-    
+
     // SQLite is case-sensitive for unique constraints by default
     $upper = Permission::create(['name' => 'Upper', 'slug' => 'TEST']);
-    
-    expect($upper->id)->toBeInt();
+
+    // ID is UUID string now
+    expect($upper->id)->toBeString()
+        ->and($upper->id)->toMatch('/^[0-9a-f-]{36}$/');
 });
 
 test('name uniqueness is enforced', function () {

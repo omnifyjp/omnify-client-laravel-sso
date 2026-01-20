@@ -18,10 +18,10 @@ describe('UserFactory', function () {
         $user = User::factory()->create();
 
         expect($user)->toBeInstanceOf(User::class);
-        expect($user->id)->toBeInt();
+        expect($user->id)->toBeString(); // UUID
         expect($user->name)->toBeString()->not->toBeEmpty();
         expect($user->email)->toBeString()->toContain('@');
-        expect($user->password)->toBeString()->not->toBeEmpty();
+        // SSO users don't have passwords - authentication is via Console tokens
         expect($user->console_user_id)->not->toBeNull();
     });
 
@@ -46,17 +46,23 @@ describe('UserFactory', function () {
         expect($user->console_token_expires_at)->toBeNull();
     });
 
-    test('unverified state creates user without email verification', function () {
+    test('unverified state is no-op for SSO users (verified via Console)', function () {
+        // SSO users don't have email_verified_at column - verification is handled by Console
         $user = User::factory()->unverified()->create();
 
-        expect($user->email_verified_at)->toBeNull();
+        // unverified() is a no-op for SSO users - should create normally
+        expect($user->id)->not->toBeNull();
+        expect($user->email)->not->toBeNull();
     });
 
     test('withRole state assigns specific role', function () {
-        $role = Role::factory()->create(['name' => 'Admin']);
-        $user = User::factory()->withRole($role)->create();
+        // Create the role first
+        $role = Role::create(['name' => 'Admin', 'slug' => 'admin', 'level' => 100]);
+        $user = User::factory()->withRole('admin')->create();
 
-        expect($user->role_id)->toBe($role->id);
+        // SSO uses many-to-many roles, not single role_id
+        expect($user->roles)->toHaveCount(1);
+        expect($user->roles->first()->slug)->toBe('admin');
     });
 
     test('allows overriding attributes', function () {
@@ -87,7 +93,7 @@ describe('RoleFactory', function () {
         $role = Role::factory()->create();
 
         expect($role)->toBeInstanceOf(Role::class);
-        expect($role->id)->toBeInt();
+        expect($role->id)->toBeString()->toMatch('/^[0-9a-f-]{36}$/'); // UUID
         expect($role->name)->toBeString()->not->toBeEmpty();
         expect($role->slug)->toBeString()->not->toBeEmpty();
     });
@@ -129,7 +135,7 @@ describe('PermissionFactory', function () {
         $permission = Permission::factory()->create();
 
         expect($permission)->toBeInstanceOf(Permission::class);
-        expect($permission->id)->toBeInt();
+        expect($permission->id)->toBeString()->toMatch('/^[0-9a-f-]{36}$/'); // UUID
         expect($permission->name)->toBeString()->not->toBeEmpty();
         expect($permission->slug)->toBeString()->not->toBeEmpty();
     });
@@ -200,10 +206,10 @@ describe('TeamFactory', function () {
         $team = Team::factory()->create();
 
         expect($team)->toBeInstanceOf(Team::class);
-        expect($team->id)->toBeInt();
+        expect($team->id)->toBeString()->toMatch('/^[0-9a-f-]{36}$/'); // UUID
         expect($team->name)->toBeString()->not->toBeEmpty();
-        expect($team->console_team_id)->toBeInt();
-        expect($team->console_org_id)->toBeInt();
+        expect($team->console_team_id)->toBeString()->toMatch('/^[0-9a-f-]{36}$/'); // UUID
+        expect($team->console_org_id)->toBeString()->toMatch('/^[0-9a-f-]{36}$/'); // UUID
     });
 
     test('creates multiple unique teams', function () {
@@ -263,11 +269,13 @@ describe('TeamPermissionFactory', function () {
 
 describe('Factory Relationships', function () {
     test('user can be created with role relationship', function () {
-        $role = Role::factory()->create();
-        $user = User::factory()->create(['role_id' => $role->id]);
+        // SSO uses many-to-many roles, not single role_id
+        $role = Role::factory()->create(['name' => 'Test Role', 'slug' => 'test-role']);
+        $user = User::factory()->create();
+        $user->assignRole($role);
 
-        expect($user->role)->toBeInstanceOf(Role::class);
-        expect($user->role->id)->toBe($role->id);
+        expect($user->roles)->toHaveCount(1);
+        expect($user->roles->first()->id)->toBe($role->id);
     });
 
     test('role can have many permissions through pivot', function () {

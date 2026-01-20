@@ -27,7 +27,7 @@ class SsoClientServiceProvider extends ServiceProvider
     public function boot(): void
     {
         // Load migrations from package
-        $this->loadMigrationsFrom(__DIR__ . '/../../database/migrations');
+        $this->loadMigrationsFrom(__DIR__ . '/../../database/migrations/omnify');
 
         // Enforce morph map for this package's models
         Relation::enforceMorphMap([

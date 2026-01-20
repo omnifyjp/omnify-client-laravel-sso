@@ -25,12 +25,13 @@ test('gate before hook checks user hasPermission method', function () {
     $permission = Permission::create(['slug' => 'posts.create', 'name' => 'Create Posts']);
     $role->permissions()->attach($permission->id);
 
-    // Create user with role
-    $user = User::factory()->create(['role_id' => $role->id]);
+    // Create user and assign role (many-to-many relationship)
+    $user = User::factory()->create();
+    $user->assignRole($role);
 
-    // Test actual hasPermission via role
-    // User trait HasConsoleSso should delegate to role's permissions
-    $hasPermission = $user->role ? $user->role->hasPermission('posts.create') : false;
+    // Test actual hasPermission via roles (many-to-many)
+    // User should have the permission through their assigned role
+    $hasPermission = $user->roles->contains(fn ($r) => $r->hasPermission('posts.create'));
 
     expect($hasPermission)->toBeTrue();
 });

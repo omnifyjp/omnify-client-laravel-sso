@@ -1,0 +1,351 @@
+version: 1
+timestamp: "2026-01-19T16:08:59.342Z"
+driver: mysql
+migration: 8 migration(s)
+description: Generated 7 change(s)
+changes:
+  - action: schema_added
+    schema: Branch
+  - action: schema_added
+    schema: Permission
+  - action: schema_added
+    schema: Role
+  - action: schema_added
+    schema: RolePermission
+  - action: schema_added
+    schema: Team
+  - action: schema_added
+    schema: TeamPermission
+  - action: schema_added
+    schema: User
+snapshot:
+  Branch:
+    name: Branch
+    kind: object
+    properties:
+      console_branch_id:
+        type: Uuid
+        displayName:
+          ja: Console Branch ID
+          en: Console Branch ID
+          vi: Console Branch ID
+        description:
+          ja: Console側の支店ID
+          en: Branch ID from Console
+          vi: ID chi nhánh từ Console
+        unique: true
+      console_org_id:
+        type: Uuid
+        displayName:
+          ja: Console Organization ID
+          en: Console Organization ID
+          vi: Console Organization ID
+        description:
+          ja: Console側の組織ID
+          en: Organization ID from Console
+          vi: ID tổ chức từ Console
+      code:
+        type: String
+        displayName:
+          ja: 支店コード
+          en: Branch Code
+          vi: Mã chi nhánh
+        description:
+          ja: 組織内でユニークなコード
+          en: Unique code within organization
+          vi: Mã duy nhất trong tổ chức
+        length: 20
+      name:
+        type: String
+        displayName:
+          ja: 支店名
+          en: Branch Name
+          vi: Tên chi nhánh
+        length: 100
+      is_headquarters:
+        type: Boolean
+        displayName:
+          ja: 本社
+          en: Is Headquarters
+          vi: Là trụ sở chính
+        description:
+          ja: この支店が組織の本社かどうか
+          en: Whether this is the main headquarters of the organization
+          vi: Chi nhánh này có phải là trụ sở chính không
+        default: false
+      is_active:
+        type: Boolean
+        displayName:
+          ja: 有効
+          en: Active
+          vi: Hoạt động
+        default: true
+    options:
+      idType: Uuid
+      timestamps: true
+      softDelete: true
+  Permission:
+    name: Permission
+    kind: object
+    properties:
+      name:
+        type: String
+        displayName:
+          ja: 権限名
+          en: Permission Name
+          vi: Tên quyền
+        unique: true
+        length: 100
+      slug:
+        type: String
+        displayName:
+          ja: スラッグ
+          en: Slug
+          vi: Slug
+        unique: true
+        length: 100
+      group:
+        type: String
+        displayName:
+          ja: グループ
+          en: Group
+          vi: Nhóm
+        nullable: true
+        length: 50
+      roles:
+        type: Association
+        displayName:
+          ja: ロール
+          en: Roles
+          vi: Vai trò
+        relation: ManyToMany
+        target: Role
+        joinTable: role_permissions
+    options:
+      idType: Uuid
+      timestamps: true
+  Role:
+    name: Role
+    kind: object
+    properties:
+      name:
+        type: String
+        displayName:
+          ja: ロール名
+          en: Role Name
+          vi: Tên vai trò
+        unique: true
+        length: 100
+      slug:
+        type: String
+        displayName:
+          ja: スラッグ
+          en: Slug
+          vi: Slug
+        unique: true
+        length: 100
+      description:
+        type: Text
+        displayName:
+          ja: 説明
+          en: Description
+          vi: Mô tả
+        nullable: true
+      level:
+        type: Int
+        displayName:
+          ja: レベル
+          en: Level
+          vi: Cấp độ
+        description:
+          ja: ロールの優先順位（大きいほど上位）
+          en: Role priority (higher = more privileged)
+          vi: Độ ưu tiên vai trò
+        default: 0
+      permissions:
+        type: Association
+        displayName:
+          ja: 権限
+          en: Permissions
+          vi: Quyền hạn
+        relation: ManyToMany
+        target: Permission
+        joinTable: role_permissions
+    options:
+      idType: Uuid
+      timestamps: true
+  RolePermission:
+    name: RolePermission
+    kind: object
+    properties:
+      role:
+        type: Association
+        displayName:
+          ja: ロール
+          en: Role
+          vi: Vai trò
+        relation: ManyToOne
+        target: Role
+      permission:
+        type: Association
+        displayName:
+          ja: 権限
+          en: Permission
+          vi: Quyền hạn
+        relation: ManyToOne
+        target: Permission
+    options:
+      id: false
+      timestamps: true
+      tableName: role_permissions
+  Team:
+    name: Team
+    kind: object
+    properties:
+      console_team_id:
+        type: Uuid
+        displayName:
+          ja: Console Team ID
+          en: Console Team ID
+          vi: Console Team ID
+        description:
+          ja: Console側のチームID
+          en: Team ID from Console
+          vi: ID nhóm từ Console
+        unique: true
+      console_org_id:
+        type: Uuid
+        displayName:
+          ja: Console Organization ID
+          en: Console Organization ID
+          vi: Console Organization ID
+        description:
+          ja: Console側の組織ID
+          en: Organization ID from Console
+          vi: ID tổ chức từ Console
+      name:
+        type: String
+        displayName:
+          ja: チーム名
+          en: Team Name
+          vi: Tên nhóm
+        length: 100
+    options:
+      idType: Uuid
+      timestamps: true
+      softDelete: true
+  TeamPermission:
+    name: TeamPermission
+    kind: object
+    properties:
+      console_org_id:
+        type: Uuid
+        displayName:
+          ja: Console Organization ID
+          en: Console Organization ID
+          vi: Console Organization ID
+        description:
+          ja: Console側の組織ID
+          en: Organization ID from Console
+          vi: ID tổ chức từ Console
+      console_team_id:
+        type: Uuid
+        displayName:
+          ja: Console Team ID
+          en: Console Team ID
+          vi: Console Team ID
+        description:
+          ja: Console側のチームID
+          en: Team ID from Console
+          vi: ID nhóm từ Console
+      permission:
+        type: Association
+        displayName:
+          ja: 権限
+          en: Permission
+          vi: Quyền hạn
+        relation: ManyToOne
+        target: Permission
+    options:
+      idType: Uuid
+      timestamps: true
+      softDelete: true
+  User:
+    name: User
+    kind: object
+    properties:
+      name:
+        type: String
+        displayName:
+          ja: 名前
+          en: Name
+          vi: Tên
+      email:
+        type: String
+        displayName:
+          ja: メールアドレス
+          en: Email
+          vi: Email
+        unique: true
+      console_user_id:
+        type: Uuid
+        displayName:
+          ja: Console User ID
+          en: Console User ID
+          vi: Console User ID
+        description:
+          ja: Console側のユーザーID
+          en: User ID from Console SSO
+          vi: ID người dùng từ Console SSO
+        nullable: true
+        unique: true
+      console_access_token:
+        type: Text
+        displayName:
+          ja: Console Access Token
+          en: Console Access Token
+          vi: Console Access Token
+        description:
+          ja: Console APIアクセス用トークン（暗号化）
+          en: Encrypted token for Console API access
+          vi: Token mã hóa để truy cập Console API
+        nullable: true
+      console_refresh_token:
+        type: Text
+        displayName:
+          ja: Console Refresh Token
+          en: Console Refresh Token
+          vi: Console Refresh Token
+        description:
+          ja: トークン更新用リフレッシュトークン（暗号化）
+          en: Encrypted refresh token for token renewal
+          vi: Token làm mới mã hóa
+        nullable: true
+      console_token_expires_at:
+        type: Timestamp
+        displayName:
+          ja: Console Token有効期限
+          en: Console Token Expiry
+          vi: Hạn Token Console
+        description:
+          ja: アクセストークンの有効期限
+          en: Access token expiration time
+          vi: Thời gian hết hạn của token truy cập
+        nullable: true
+      roles:
+        type: Association
+        displayName:
+          ja: ロール
+          en: Roles
+          vi: Vai trò
+        description:
+          ja: ユーザーのロール（複数可、スコープ指定可能）
+          en: User's roles (multiple allowed, can be scoped to org/branch)
+          vi: Vai trò của người dùng (có thể nhiều, có thể giới hạn theo org/branch)
+        relation: ManyToMany
+        target: Role
+        joinTable: role_user
+        owning: true
+    options:
+      idType: Uuid
+      timestamps: true

@@ -4,6 +4,7 @@ use Illuminate\Support\Facades\Route;
 use Omnify\SsoClient\Http\Controllers\Admin\PermissionAdminController;
 use Omnify\SsoClient\Http\Controllers\Admin\RoleAdminController;
 use Omnify\SsoClient\Http\Controllers\Admin\TeamPermissionAdminController;
+use Omnify\SsoClient\Http\Controllers\Admin\UserRoleAdminController;
 use Omnify\SsoClient\Http\Controllers\SsoBranchController;
 use Omnify\SsoClient\Http\Controllers\SsoCallbackController;
 use Omnify\SsoClient\Http\Controllers\SsoReadOnlyController;
@@ -81,4 +82,11 @@ Route::prefix($adminPrefix)
         Route::get('teams/orphaned', [TeamPermissionAdminController::class, 'orphaned']);
         Route::post('teams/orphaned/{teamId}/restore', [TeamPermissionAdminController::class, 'restore']);
         Route::delete('teams/orphaned', [TeamPermissionAdminController::class, 'cleanupOrphaned']);
+
+        // User Role Assignments (Branch-Level Permissions - Option B)
+        // Supports scoped role assignments: global, org-wide, branch-specific
+        Route::get('users/{userId}/roles', [UserRoleAdminController::class, 'index']);
+        Route::post('users/{userId}/roles', [UserRoleAdminController::class, 'store']);
+        Route::put('users/{userId}/roles/sync', [UserRoleAdminController::class, 'sync']);
+        Route::delete('users/{userId}/roles/{roleId}', [UserRoleAdminController::class, 'destroy']);
     });

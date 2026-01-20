@@ -22,7 +22,7 @@ abstract class BranchStoreRequestBase extends FormRequest
     /**
      * Validation rules generated from Omnify schema.
      *
-     * Generated fields: console_branch_id, console_org_id, code, name
+     * Generated fields: console_branch_id, console_org_id, code, name, is_headquarters, is_active
      *
      * @return array<string, array<int, mixed>>
      */
@@ -33,6 +33,8 @@ abstract class BranchStoreRequestBase extends FormRequest
             'console_org_id' => ['required'],
             'code' => ['required', 'string', 'max:20'],
             'name' => ['required', 'string', 'max:100'],
+            'is_headquarters' => ['required', 'boolean'],
+            'is_active' => ['required', 'boolean'],
         ];
     }
 
@@ -48,6 +50,8 @@ abstract class BranchStoreRequestBase extends FormRequest
             'console_org_id' => 'Console Organization ID',
             'code' => 'Branch Code',
             'name' => 'Branch Name',
+            'is_headquarters' => 'Is Headquarters',
+            'is_active' => 'Active',
         ];
     }
 }

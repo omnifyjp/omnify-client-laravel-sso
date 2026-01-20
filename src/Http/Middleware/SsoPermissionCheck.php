@@ -8,6 +8,14 @@ use Closure;
 use Illuminate\Http\Request;
 use Symfony\Component\HttpFoundation\Response;
 
+/**
+ * Middleware for checking user permissions.
+ *
+ * Supports branch-level permissions via X-Branch-Id header context.
+ * Permission check considers: global roles + org-wide roles + branch-specific roles + team permissions.
+ *
+ * @see HasTeamPermissions::hasAnyPermission() For permission resolution logic
+ */
 class SsoPermissionCheck
 {
     /**
@@ -35,19 +43,26 @@ class SsoPermissionCheck
             ], 500);
         }
 
+        // Get org and branch context from request attributes (set by SsoOrganizationAccess middleware)
         $orgId = $request->attributes->get('orgId');
+        $branchId = $request->attributes->get('branchId'); // NEW: Branch context for branch-level permissions
+
+        // Cast to string for scoped permission methods (orgId/branchId can be int or string depending on source)
+        $orgId = $orgId !== null ? (string) $orgId : null;
+        $branchId = $branchId !== null ? (string) $branchId : null;
 
         // Parse permissions (pipe-separated for OR logic)
         $permissionList = explode('|', $permissions);
 
         // Check if user has any of the required permissions
+        // Permission check now considers branch context for scoped role permissions
         $hasPermission = false;
 
         if (method_exists($user, 'hasAnyPermission')) {
-            $hasPermission = $user->hasAnyPermission($permissionList, $orgId);
+            $hasPermission = $user->hasAnyPermission($permissionList, $orgId, $branchId);
         } else {
             foreach ($permissionList as $permission) {
-                if ($user->hasPermission(trim($permission), $orgId)) {
+                if ($user->hasPermission(trim($permission), $orgId, $branchId)) {
                     $hasPermission = true;
                     break;
                 }

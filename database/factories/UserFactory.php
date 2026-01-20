@@ -51,4 +51,37 @@ class UserFactory extends Factory
             'console_token_expires_at' => now()->subHour(),
         ]);
     }
+
+    /**
+     * User without console user ID (local user, not SSO linked).
+     */
+    public function withoutConsoleUserId(): static
+    {
+        return $this->state(fn () => [
+            'console_user_id' => null,
+            'console_access_token' => null,
+            'console_refresh_token' => null,
+            'console_token_expires_at' => null,
+        ]);
+    }
+
+    /**
+     * User with specific role (alias for withRole).
+     */
+    public function withRole(string $roleSlug): static
+    {
+        return $this->afterCreating(function (User $user) use ($roleSlug) {
+            $user->assignRole($roleSlug);
+        });
+    }
+
+    /**
+     * Unverified user (SSO users are verified via Console - this is a no-op for compatibility).
+     * Note: SSO users don't have email_verified_at column since verification is handled by Console.
+     */
+    public function unverified(): static
+    {
+        // No-op - SSO users are always verified via Console
+        return $this;
+    }
 }

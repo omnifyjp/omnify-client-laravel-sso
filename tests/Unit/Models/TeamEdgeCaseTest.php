@@ -10,72 +10,79 @@
 use Omnify\SsoClient\Models\Team;
 use Omnify\SsoClient\Models\Permission;
 use Omnify\SsoClient\Models\TeamPermission;
+use Illuminate\Support\Str;
 
 beforeEach(function () {
     $this->artisan('migrate', ['--database' => 'testing']);
+    // Console IDs are UUIDs
+    $this->testTeamId = (string) Str::uuid();
+    $this->testOrgId = (string) Str::uuid();
 });
 
 // =============================================================================
 // Console ID Edge Cases - Console IDのエッジケース
+// Note: console_team_id and console_org_id are UUIDs (strings)
 // =============================================================================
 
-test('can create team with console_team_id = 0', function () {
+test('can create team with valid UUID console_team_id', function () {
+    $teamId = (string) Str::uuid();
     $team = Team::create([
-        'name' => 'Zero Team ID',
-        'console_team_id' => 0,
-        'console_org_id' => 100,
+        'name' => 'Test Team',
+        'console_team_id' => $teamId,
+        'console_org_id' => $this->testOrgId,
     ]);
 
-    expect($team->console_team_id)->toBe(0);
+    expect($team->console_team_id)->toBe($teamId)
+        ->and($team->console_team_id)->toBeString();
 });
 
-test('can create team with console_org_id = 0', function () {
+test('can create team with nil UUID console_org_id', function () {
+    $nilUuid = '00000000-0000-0000-0000-000000000000';
     $team = Team::create([
-        'name' => 'Zero Org ID',
-        'console_team_id' => 12345,
-        'console_org_id' => 0,
+        'name' => 'Nil Org ID',
+        'console_team_id' => $this->testTeamId,
+        'console_org_id' => $nilUuid,
     ]);
 
-    expect($team->console_org_id)->toBe(0);
+    expect($team->console_org_id)->toBe($nilUuid);
 });
 
-test('can create team with very large console_team_id', function () {
-    $largeId = 9223372036854775807; // Max bigint
-    
+test('console_team_id is stored as string UUID', function () {
     $team = Team::create([
-        'name' => 'Large Team ID',
-        'console_team_id' => $largeId,
-        'console_org_id' => 100,
+        'name' => 'UUID Team',
+        'console_team_id' => $this->testTeamId,
+        'console_org_id' => $this->testOrgId,
     ]);
 
-    expect($team->console_team_id)->toBeInt();
+    expect($team->console_team_id)->toBeString()
+        ->and($team->console_team_id)->toMatch('/^[0-9a-f-]{36}$/');
 });
 
-test('console_team_id string is cast to int', function () {
+test('console_org_id is stored as string UUID', function () {
     $team = Team::create([
-        'name' => 'String ID',
-        'console_team_id' => '12345',
-        'console_org_id' => '100',
+        'name' => 'UUID Team',
+        'console_team_id' => $this->testTeamId,
+        'console_org_id' => $this->testOrgId,
     ]);
 
-    expect($team->console_team_id)->toBe(12345)
-        ->and($team->console_team_id)->toBeInt()
-        ->and($team->console_org_id)->toBe(100)
-        ->and($team->console_org_id)->toBeInt();
+    expect($team->console_org_id)->toBeString()
+        ->and($team->console_org_id)->toMatch('/^[0-9a-f-]{36}$/');
 });
 
-test('duplicate console_team_id in same org is rejected', function () {
+test('duplicate console_team_id is rejected', function () {
+    $sharedTeamId = (string) Str::uuid();
+
     Team::create([
         'name' => 'Team 1',
-        'console_team_id' => 12345,
-        'console_org_id' => 100,
+        'console_team_id' => $sharedTeamId,
+        'console_org_id' => $this->testOrgId,
     ]);
 
     // console_team_id is unique across all orgs
     expect(fn () => Team::create([
         'name' => 'Team 2',
-        'console_team_id' => 12345,
-        'console_org_id' => 200, // Different org
+        'console_team_id' => $sharedTeamId,
+        'console_org_id' => (string) Str::uuid(), // Different org
     ]))->toThrow(\Illuminate\Database\QueryException::class);
 });
 
@@ -86,8 +93,8 @@ test('duplicate console_team_id in same org is rejected', function () {
 test('can create team with minimum length name (1 char)', function () {
     $team = Team::create([
         'name' => 'A',
-        'console_team_id' => 12345,
-        'console_org_id' => 100,
+        'console_team_id' => $this->testTeamId,
+        'console_org_id' => $this->testOrgId,
     ]);
 
     expect($team->name)->toBe('A');
@@ -95,11 +102,11 @@ test('can create team with minimum length name (1 char)', function () {
 
 test('can create team with maximum length name (100 chars)', function () {
     $longName = str_repeat('a', 100);
-    
+
     $team = Team::create([
         'name' => $longName,
-        'console_team_id' => 12345,
-        'console_org_id' => 100,
+        'console_team_id' => $this->testTeamId,
+        'console_org_id' => $this->testOrgId,
     ]);
 
     expect(strlen($team->name))->toBe(100);
@@ -108,8 +115,8 @@ test('can create team with maximum length name (100 chars)', function () {
 test('can create team with unicode name (Japanese)', function () {
     $team = Team::create([
         'name' => '開発チーム',
-        'console_team_id' => 12345,
-        'console_org_id' => 100,
+        'console_team_id' => $this->testTeamId,
+        'console_org_id' => $this->testOrgId,
     ]);
 
     expect($team->name)->toBe('開発チーム');
@@ -118,8 +125,8 @@ test('can create team with unicode name (Japanese)', function () {
 test('can create team with unicode name (Vietnamese)', function () {
     $team = Team::create([
         'name' => 'Nhóm phát triển',
-        'console_team_id' => 12345,
-        'console_org_id' => 100,
+        'console_team_id' => $this->testTeamId,
+        'console_org_id' => $this->testOrgId,
     ]);
 
     expect($team->name)->toBe('Nhóm phát triển');
@@ -128,8 +135,8 @@ test('can create team with unicode name (Vietnamese)', function () {
 test('can create team with emoji in name', function () {
     $team = Team::create([
         'name' => 'Dev Team 🚀',
-        'console_team_id' => 12345,
-        'console_org_id' => 100,
+        'console_team_id' => $this->testTeamId,
+        'console_org_id' => $this->testOrgId,
     ]);
 
     expect($team->name)->toContain('🚀');
@@ -138,19 +145,21 @@ test('can create team with emoji in name', function () {
 test('can create team with special characters in name', function () {
     $team = Team::create([
         'name' => "Team A & B's \"Special\" <Group>",
-        'console_team_id' => 12345,
-        'console_org_id' => 100,
+        'console_team_id' => $this->testTeamId,
+        'console_org_id' => $this->testOrgId,
     ]);
 
     expect($team->name)->toBe("Team A & B's \"Special\" <Group>");
 });
 
 test('can create multiple teams with same name in different orgs', function () {
-    Team::create(['name' => 'Development', 'console_team_id' => 1001, 'console_org_id' => 100]);
-    Team::create(['name' => 'Development', 'console_team_id' => 2001, 'console_org_id' => 200]);
+    $orgId1 = (string) Str::uuid();
+    $orgId2 = (string) Str::uuid();
+    Team::create(['name' => 'Development', 'console_team_id' => (string) Str::uuid(), 'console_org_id' => $orgId1]);
+    Team::create(['name' => 'Development', 'console_team_id' => (string) Str::uuid(), 'console_org_id' => $orgId2]);
 
     $teams = Team::where('name', 'Development')->get();
-    
+
     expect($teams)->toHaveCount(2);
 });
 
@@ -161,152 +170,164 @@ test('can create multiple teams with same name in different orgs', function () {
 test('multiple soft delete and restore cycles', function () {
     $team = Team::create([
         'name' => 'Recyclable',
-        'console_team_id' => 12345,
-        'console_org_id' => 100,
+        'console_team_id' => $this->testTeamId,
+        'console_org_id' => $this->testOrgId,
     ]);
 
     for ($i = 0; $i < 5; $i++) {
         $team->delete();
         expect(Team::find($team->id))->toBeNull();
-        
+
         $team->restore();
         expect(Team::find($team->id))->not->toBeNull();
     }
 });
 
 test('soft deleted team excludes from getByOrgId', function () {
-    $team1 = Team::create(['name' => 'Active', 'console_team_id' => 1001, 'console_org_id' => 100]);
-    $team2 = Team::create(['name' => 'Deleted', 'console_team_id' => 1002, 'console_org_id' => 100]);
-    
+    $orgId = (string) Str::uuid();
+    $team1 = Team::create(['name' => 'Active', 'console_team_id' => (string) Str::uuid(), 'console_org_id' => $orgId]);
+    $team2 = Team::create(['name' => 'Deleted', 'console_team_id' => (string) Str::uuid(), 'console_org_id' => $orgId]);
+
     $team2->delete();
 
-    $teams = Team::getByOrgId(100);
-    
+    $teams = Team::getByOrgId($orgId);
+
     expect($teams)->toHaveCount(1)
         ->and($teams->first()->name)->toBe('Active');
 });
 
 test('soft deleted team excludes from findByConsoleId', function () {
-    $team = Team::create(['name' => 'Deleted', 'console_team_id' => 99999, 'console_org_id' => 100]);
+    $teamId = (string) Str::uuid();
+    $team = Team::create(['name' => 'Deleted', 'console_team_id' => $teamId, 'console_org_id' => $this->testOrgId]);
     $team->delete();
 
-    $found = Team::findByConsoleId(99999);
-    
+    $found = Team::findByConsoleId($teamId);
+
     expect($found)->toBeNull();
 });
 
 test('can query only trashed teams by org', function () {
-    Team::create(['name' => 'Active 1', 'console_team_id' => 1001, 'console_org_id' => 100]);
-    $deleted1 = Team::create(['name' => 'Deleted 1', 'console_team_id' => 1002, 'console_org_id' => 100]);
-    $deleted2 = Team::create(['name' => 'Deleted 2', 'console_team_id' => 1003, 'console_org_id' => 100]);
-    Team::create(['name' => 'Other Org', 'console_team_id' => 2001, 'console_org_id' => 200]);
-    
+    $orgId1 = (string) Str::uuid();
+    $orgId2 = (string) Str::uuid();
+    Team::create(['name' => 'Active 1', 'console_team_id' => (string) Str::uuid(), 'console_org_id' => $orgId1]);
+    $deleted1 = Team::create(['name' => 'Deleted 1', 'console_team_id' => (string) Str::uuid(), 'console_org_id' => $orgId1]);
+    $deleted2 = Team::create(['name' => 'Deleted 2', 'console_team_id' => (string) Str::uuid(), 'console_org_id' => $orgId1]);
+    Team::create(['name' => 'Other Org', 'console_team_id' => (string) Str::uuid(), 'console_org_id' => $orgId2]);
+
     $deleted1->delete();
     $deleted2->delete();
 
-    $trashed = Team::onlyTrashed()->where('console_org_id', 100)->get();
-    
+    $trashed = Team::onlyTrashed()->where('console_org_id', $orgId1)->get();
+
     expect($trashed)->toHaveCount(2);
 });
 
 test('force delete removes team permanently', function () {
     $team = Team::create([
         'name' => 'Permanent Delete',
-        'console_team_id' => 12345,
-        'console_org_id' => 100,
+        'console_team_id' => $this->testTeamId,
+        'console_org_id' => $this->testOrgId,
     ]);
     $teamId = $team->id;
 
     $team->forceDelete();
-    
+
     expect(Team::withTrashed()->find($teamId))->toBeNull();
 });
 
 test('can create new team with same console_team_id after force delete', function () {
+    $sharedTeamId = (string) Str::uuid();
     $team = Team::create([
         'name' => 'Original',
-        'console_team_id' => 12345,
-        'console_org_id' => 100,
+        'console_team_id' => $sharedTeamId,
+        'console_org_id' => $this->testOrgId,
     ]);
     $team->forceDelete();
-    
+
     $newTeam = Team::create([
         'name' => 'Reused ID',
-        'console_team_id' => 12345,
-        'console_org_id' => 100,
+        'console_team_id' => $sharedTeamId,
+        'console_org_id' => $this->testOrgId,
     ]);
-    
+
     expect($newTeam->name)->toBe('Reused ID');
 });
 
 // =============================================================================
 // findByConsoleId Edge Cases - findByConsoleIdのエッジケース
+// Note: console_team_id is now UUID (string)
 // =============================================================================
 
-test('findByConsoleId with zero returns team if exists', function () {
-    Team::create(['name' => 'Zero ID', 'console_team_id' => 0, 'console_org_id' => 100]);
+test('findByConsoleId with nil UUID returns team if exists', function () {
+    $nilUuid = '00000000-0000-0000-0000-000000000000';
+    Team::create(['name' => 'Nil UUID', 'console_team_id' => $nilUuid, 'console_org_id' => $this->testOrgId]);
 
-    $found = Team::findByConsoleId(0);
-    
+    $found = Team::findByConsoleId($nilUuid);
+
     expect($found)->not->toBeNull()
-        ->and($found->name)->toBe('Zero ID');
+        ->and($found->name)->toBe('Nil UUID');
 });
 
-test('findByConsoleId with negative returns null (no team with negative ID)', function () {
-    // Negative IDs shouldn't exist in normal use
-    $found = Team::findByConsoleId(-1);
-    
+test('findByConsoleId with invalid UUID returns null', function () {
+    // Invalid UUID format
+    $found = Team::findByConsoleId('not-a-uuid');
+
     expect($found)->toBeNull();
 });
 
-test('findByConsoleId with string is converted to int', function () {
-    Team::create(['name' => 'String Search', 'console_team_id' => 12345, 'console_org_id' => 100]);
+test('findByConsoleId with valid UUID finds team', function () {
+    $teamId = (string) Str::uuid();
+    Team::create(['name' => 'UUID Search', 'console_team_id' => $teamId, 'console_org_id' => $this->testOrgId]);
 
-    // PHP will convert string to int
-    $found = Team::findByConsoleId('12345');
-    
-    expect($found)->not->toBeNull();
+    $found = Team::findByConsoleId($teamId);
+
+    expect($found)->not->toBeNull()
+        ->and($found->console_team_id)->toBe($teamId);
 });
 
 // =============================================================================
 // getByOrgId Edge Cases - getByOrgIdのエッジケース
+// Note: console_org_id is now UUID (string)
 // =============================================================================
 
-test('getByOrgId with zero returns teams', function () {
-    Team::create(['name' => 'Zero Org Team', 'console_team_id' => 1001, 'console_org_id' => 0]);
+test('getByOrgId with nil UUID returns teams', function () {
+    $nilUuid = '00000000-0000-0000-0000-000000000000';
+    Team::create(['name' => 'Nil Org Team', 'console_team_id' => (string) Str::uuid(), 'console_org_id' => $nilUuid]);
 
-    $teams = Team::getByOrgId(0);
-    
+    $teams = Team::getByOrgId($nilUuid);
+
     expect($teams)->toHaveCount(1);
 });
 
-test('getByOrgId with negative returns empty', function () {
-    $teams = Team::getByOrgId(-1);
-    
+test('getByOrgId with nonexistent UUID returns empty', function () {
+    $teams = Team::getByOrgId((string) Str::uuid());
+
     expect($teams)->toHaveCount(0);
 });
 
 test('getByOrgId returns teams in creation order', function () {
-    Team::create(['name' => 'First', 'console_team_id' => 1003, 'console_org_id' => 100]);
-    Team::create(['name' => 'Second', 'console_team_id' => 1001, 'console_org_id' => 100]);
-    Team::create(['name' => 'Third', 'console_team_id' => 1002, 'console_org_id' => 100]);
+    $orgId = (string) Str::uuid();
+    Team::create(['name' => 'First', 'console_team_id' => (string) Str::uuid(), 'console_org_id' => $orgId]);
+    Team::create(['name' => 'Second', 'console_team_id' => (string) Str::uuid(), 'console_org_id' => $orgId]);
+    Team::create(['name' => 'Third', 'console_team_id' => (string) Str::uuid(), 'console_org_id' => $orgId]);
 
-    $teams = Team::getByOrgId(100);
-    
+    $teams = Team::getByOrgId($orgId);
+
     expect($teams->first()->name)->toBe('First');
 });
 
 test('getByOrgId with many teams', function () {
+    $orgId = (string) Str::uuid();
     for ($i = 1; $i <= 100; $i++) {
         Team::create([
             'name' => "Team $i",
-            'console_team_id' => 1000 + $i,
-            'console_org_id' => 100,
+            'console_team_id' => (string) Str::uuid(),
+            'console_org_id' => $orgId,
         ]);
     }
 
-    $teams = Team::getByOrgId(100);
-    
+    $teams = Team::getByOrgId($orgId);
+
     expect($teams)->toHaveCount(100);
 });
 
@@ -315,9 +336,9 @@ test('getByOrgId with many teams', function () {
 // =============================================================================
 
 test('team permission requires console_org_id', function () {
-    $team = Team::create(['name' => 'Test', 'console_team_id' => 12345, 'console_org_id' => 100]);
+    $team = Team::create(['name' => 'Test', 'console_team_id' => $this->testTeamId, 'console_org_id' => $this->testOrgId]);
     $permission = Permission::create(['name' => 'Test', 'slug' => 'test']);
-    
+
     // TeamPermission requires console_org_id
     expect(fn () => TeamPermission::create([
         'console_team_id' => $team->console_team_id,
@@ -327,10 +348,11 @@ test('team permission requires console_org_id', function () {
 });
 
 test('same permission can be assigned to multiple teams', function () {
-    $team1 = Team::create(['name' => 'Team 1', 'console_team_id' => 1001, 'console_org_id' => 100]);
-    $team2 = Team::create(['name' => 'Team 2', 'console_team_id' => 1002, 'console_org_id' => 100]);
+    $orgId = (string) Str::uuid();
+    $team1 = Team::create(['name' => 'Team 1', 'console_team_id' => (string) Str::uuid(), 'console_org_id' => $orgId]);
+    $team2 = Team::create(['name' => 'Team 2', 'console_team_id' => (string) Str::uuid(), 'console_org_id' => $orgId]);
     $permission = Permission::create(['name' => 'Shared', 'slug' => 'shared']);
-    
+
     TeamPermission::create([
         'console_team_id' => $team1->console_team_id,
         'console_org_id' => $team1->console_org_id,
@@ -347,15 +369,15 @@ test('same permission can be assigned to multiple teams', function () {
 });
 
 test('hasPermission with empty string returns false', function () {
-    $team = Team::create(['name' => 'Test', 'console_team_id' => 12345, 'console_org_id' => 100]);
-    
+    $team = Team::create(['name' => 'Test', 'console_team_id' => $this->testTeamId, 'console_org_id' => $this->testOrgId]);
+
     expect($team->hasPermission(''))->toBeFalse();
 });
 
 test('hasPermission is case sensitive', function () {
-    $team = Team::create(['name' => 'Test', 'console_team_id' => 12345, 'console_org_id' => 100]);
+    $team = Team::create(['name' => 'Test', 'console_team_id' => $this->testTeamId, 'console_org_id' => $this->testOrgId]);
     $permission = Permission::create(['name' => 'View', 'slug' => 'projects.view']);
-    
+
     TeamPermission::create([
         'console_team_id' => $team->console_team_id,
         'console_org_id' => $team->console_org_id,
@@ -368,9 +390,9 @@ test('hasPermission is case sensitive', function () {
 });
 
 test('hasAnyPermission with empty array returns false', function () {
-    $team = Team::create(['name' => 'Test', 'console_team_id' => 12345, 'console_org_id' => 100]);
+    $team = Team::create(['name' => 'Test', 'console_team_id' => $this->testTeamId, 'console_org_id' => $this->testOrgId]);
     $permission = Permission::create(['name' => 'Test', 'slug' => 'test']);
-    
+
     TeamPermission::create([
         'console_team_id' => $team->console_team_id,
         'console_org_id' => $team->console_org_id,
@@ -381,15 +403,15 @@ test('hasAnyPermission with empty array returns false', function () {
 });
 
 test('hasAllPermissions with empty array returns true', function () {
-    $team = Team::create(['name' => 'Test', 'console_team_id' => 12345, 'console_org_id' => 100]);
+    $team = Team::create(['name' => 'Test', 'console_team_id' => $this->testTeamId, 'console_org_id' => $this->testOrgId]);
 
     expect($team->hasAllPermissions([]))->toBeTrue();
 });
 
 test('hasAllPermissions with duplicates counts unique', function () {
-    $team = Team::create(['name' => 'Test', 'console_team_id' => 12345, 'console_org_id' => 100]);
+    $team = Team::create(['name' => 'Test', 'console_team_id' => $this->testTeamId, 'console_org_id' => $this->testOrgId]);
     $permission = Permission::create(['name' => 'View', 'slug' => 'view']);
-    
+
     TeamPermission::create([
         'console_team_id' => $team->console_team_id,
         'console_org_id' => $team->console_org_id,
@@ -399,7 +421,7 @@ test('hasAllPermissions with duplicates counts unique', function () {
     // Current implementation counts array items, so duplicates fail
     // This documents the actual behavior - duplicates inflate the count
     expect($team->hasAllPermissions(['view', 'view', 'view']))->toBeFalse();
-    
+
     // Without duplicates works correctly
     expect($team->hasAllPermissions(['view']))->toBeTrue();
 });
@@ -411,8 +433,8 @@ test('hasAllPermissions with duplicates counts unique', function () {
 test('can search teams with SQL special characters in name', function () {
     $team = Team::create([
         'name' => "Team's \"Test\"",
-        'console_team_id' => 12345,
-        'console_org_id' => 100,
+        'console_team_id' => $this->testTeamId,
+        'console_org_id' => $this->testOrgId,
     ]);
 
     $found = Team::where('name', "Team's \"Test\"")->first();
@@ -420,26 +442,29 @@ test('can search teams with SQL special characters in name', function () {
 });
 
 test('like query with percent in name', function () {
-    Team::create(['name' => '100% Team', 'console_team_id' => 1001, 'console_org_id' => 100]);
-    Team::create(['name' => 'Normal', 'console_team_id' => 1002, 'console_org_id' => 100]);
+    $teamId1 = (string) Str::uuid();
+    Team::create(['name' => '100% Team', 'console_team_id' => $teamId1, 'console_org_id' => $this->testOrgId]);
+    Team::create(['name' => 'Normal', 'console_team_id' => (string) Str::uuid(), 'console_org_id' => $this->testOrgId]);
 
     $found = Team::where('name', '100% Team')->first();
     expect($found)->not->toBeNull()
-        ->and($found->console_team_id)->toBe(1001);
+        ->and($found->console_team_id)->toBe($teamId1);
 });
 
 test('can count teams per organization', function () {
-    Team::create(['name' => 'Org1 T1', 'console_team_id' => 1001, 'console_org_id' => 100]);
-    Team::create(['name' => 'Org1 T2', 'console_team_id' => 1002, 'console_org_id' => 100]);
-    Team::create(['name' => 'Org1 T3', 'console_team_id' => 1003, 'console_org_id' => 100]);
-    Team::create(['name' => 'Org2 T1', 'console_team_id' => 2001, 'console_org_id' => 200]);
+    $orgId1 = (string) Str::uuid();
+    $orgId2 = (string) Str::uuid();
+    Team::create(['name' => 'Org1 T1', 'console_team_id' => (string) Str::uuid(), 'console_org_id' => $orgId1]);
+    Team::create(['name' => 'Org1 T2', 'console_team_id' => (string) Str::uuid(), 'console_org_id' => $orgId1]);
+    Team::create(['name' => 'Org1 T3', 'console_team_id' => (string) Str::uuid(), 'console_org_id' => $orgId1]);
+    Team::create(['name' => 'Org2 T1', 'console_team_id' => (string) Str::uuid(), 'console_org_id' => $orgId2]);
 
     $counts = Team::selectRaw('console_org_id, count(*) as count')
         ->groupBy('console_org_id')
         ->pluck('count', 'console_org_id');
-    
-    expect($counts[100])->toBe(3)
-        ->and($counts[200])->toBe(1);
+
+    expect($counts[$orgId1])->toBe(3)
+        ->and($counts[$orgId2])->toBe(1);
 });
 
 // =============================================================================
@@ -449,38 +474,42 @@ test('can count teams per organization', function () {
 test('can update team name preserving IDs', function () {
     $team = Team::create([
         'name' => 'Original',
-        'console_team_id' => 12345,
-        'console_org_id' => 100,
+        'console_team_id' => $this->testTeamId,
+        'console_org_id' => $this->testOrgId,
     ]);
 
     $team->update(['name' => 'Updated']);
     $team->refresh();
-    
+
     expect($team->name)->toBe('Updated')
-        ->and($team->console_team_id)->toBe(12345)
-        ->and($team->console_org_id)->toBe(100);
+        ->and($team->console_team_id)->toBe($this->testTeamId)
+        ->and($team->console_org_id)->toBe($this->testOrgId);
 });
 
 test('can move team to different organization', function () {
+    $orgId1 = (string) Str::uuid();
+    $orgId2 = (string) Str::uuid();
     $team = Team::create([
         'name' => 'Movable',
-        'console_team_id' => 12345,
-        'console_org_id' => 100,
+        'console_team_id' => $this->testTeamId,
+        'console_org_id' => $orgId1,
     ]);
 
-    $team->update(['console_org_id' => 200]);
+    $team->update(['console_org_id' => $orgId2]);
     $team->refresh();
-    
-    expect($team->console_org_id)->toBe(200)
-        ->and(Team::getByOrgId(100))->toHaveCount(0)
-        ->and(Team::getByOrgId(200))->toHaveCount(1);
+
+    expect($team->console_org_id)->toBe($orgId2)
+        ->and(Team::getByOrgId($orgId1))->toHaveCount(0)
+        ->and(Team::getByOrgId($orgId2))->toHaveCount(1);
 });
 
 test('cannot update to existing console_team_id', function () {
-    Team::create(['name' => 'Team 1', 'console_team_id' => 11111, 'console_org_id' => 100]);
-    $team2 = Team::create(['name' => 'Team 2', 'console_team_id' => 22222, 'console_org_id' => 100]);
+    $teamId1 = (string) Str::uuid();
+    $teamId2 = (string) Str::uuid();
+    Team::create(['name' => 'Team 1', 'console_team_id' => $teamId1, 'console_org_id' => $this->testOrgId]);
+    $team2 = Team::create(['name' => 'Team 2', 'console_team_id' => $teamId2, 'console_org_id' => $this->testOrgId]);
 
-    expect(fn () => $team2->update(['console_team_id' => 11111]))
+    expect(fn () => $team2->update(['console_team_id' => $teamId1]))
         ->toThrow(\Illuminate\Database\QueryException::class);
 });
 
@@ -491,15 +520,15 @@ test('cannot update to existing console_team_id', function () {
 test('deleted_at is set on soft delete', function () {
     $team = Team::create([
         'name' => 'To Delete',
-        'console_team_id' => 12345,
-        'console_org_id' => 100,
+        'console_team_id' => $this->testTeamId,
+        'console_org_id' => $this->testOrgId,
     ]);
 
     expect($team->deleted_at)->toBeNull();
-    
+
     $team->delete();
     $team->refresh();
-    
+
     expect($team->deleted_at)->not->toBeNull()
         ->and($team->deleted_at)->toBeInstanceOf(\Carbon\Carbon::class);
 });
@@ -507,16 +536,16 @@ test('deleted_at is set on soft delete', function () {
 test('deleted_at is cleared on restore', function () {
     $team = Team::create([
         'name' => 'To Restore',
-        'console_team_id' => 12345,
-        'console_org_id' => 100,
+        'console_team_id' => $this->testTeamId,
+        'console_org_id' => $this->testOrgId,
     ]);
     $team->delete();
-    
+
     expect(Team::withTrashed()->find($team->id)->deleted_at)->not->toBeNull();
-    
+
     $team->restore();
     $team->refresh();
-    
+
     expect($team->deleted_at)->toBeNull();
 });
 
@@ -525,37 +554,42 @@ test('deleted_at is cleared on restore', function () {
 // =============================================================================
 
 test('firstOrCreate handles existing team', function () {
-    Team::create(['name' => 'Existing', 'console_team_id' => 12345, 'console_org_id' => 100]);
+    $teamId = (string) Str::uuid();
+    $orgId1 = (string) Str::uuid();
+    Team::create(['name' => 'Existing', 'console_team_id' => $teamId, 'console_org_id' => $orgId1]);
 
     $team = Team::firstOrCreate(
-        ['console_team_id' => 12345],
-        ['name' => 'Should Not Create', 'console_org_id' => 200]
+        ['console_team_id' => $teamId],
+        ['name' => 'Should Not Create', 'console_org_id' => (string) Str::uuid()]
     );
-    
+
     expect($team->name)->toBe('Existing')
-        ->and($team->console_org_id)->toBe(100);
+        ->and($team->console_org_id)->toBe($orgId1);
 });
 
 test('firstOrCreate creates when not exists', function () {
+    $teamId = (string) Str::uuid();
     $team = Team::firstOrCreate(
-        ['console_team_id' => 12345],
-        ['name' => 'New Team', 'console_org_id' => 100]
+        ['console_team_id' => $teamId],
+        ['name' => 'New Team', 'console_org_id' => $this->testOrgId]
     );
-    
+
     expect($team->wasRecentlyCreated)->toBeTrue()
         ->and($team->name)->toBe('New Team');
 });
 
 test('updateOrCreate updates existing', function () {
-    Team::create(['name' => 'Original', 'console_team_id' => 12345, 'console_org_id' => 100]);
+    $teamId = (string) Str::uuid();
+    $orgId2 = (string) Str::uuid();
+    Team::create(['name' => 'Original', 'console_team_id' => $teamId, 'console_org_id' => $this->testOrgId]);
 
     $team = Team::updateOrCreate(
-        ['console_team_id' => 12345],
-        ['name' => 'Updated', 'console_org_id' => 200]
+        ['console_team_id' => $teamId],
+        ['name' => 'Updated', 'console_org_id' => $orgId2]
     );
-    
+
     expect($team->name)->toBe('Updated')
-        ->and($team->console_org_id)->toBe(200)
+        ->and($team->console_org_id)->toBe($orgId2)
         ->and(Team::count())->toBe(1);
 });
 
@@ -564,37 +598,41 @@ test('updateOrCreate updates existing', function () {
 // =============================================================================
 
 test('can handle large number of teams in single org', function () {
+    $orgId = (string) Str::uuid();
     $insertData = [];
     for ($i = 1; $i <= 500; $i++) {
         $insertData[] = [
+            'id' => (string) Str::uuid(),
             'name' => "Team $i",
-            'console_team_id' => $i,
-            'console_org_id' => 100,
+            'console_team_id' => (string) Str::uuid(),
+            'console_org_id' => $orgId,
             'created_at' => now(),
             'updated_at' => now(),
         ];
     }
     Team::insert($insertData);
 
-    $teams = Team::where('console_org_id', 100)->get();
-    
+    $teams = Team::where('console_org_id', $orgId)->get();
+
     expect($teams)->toHaveCount(500);
 });
 
 test('can query across multiple organizations efficiently', function () {
+    $orgIds = [];
     for ($org = 1; $org <= 10; $org++) {
+        $orgIds[$org] = (string) Str::uuid();
         for ($team = 1; $team <= 10; $team++) {
             Team::create([
                 'name' => "Org$org Team$team",
-                'console_team_id' => ($org * 1000) + $team,
-                'console_org_id' => $org,
+                'console_team_id' => (string) Str::uuid(),
+                'console_org_id' => $orgIds[$org],
             ]);
         }
     }
 
     $totalTeams = Team::count();
-    $org5Teams = Team::where('console_org_id', 5)->count();
-    
+    $org5Teams = Team::where('console_org_id', $orgIds[5])->count();
+
     expect($totalTeams)->toBe(100)
         ->and($org5Teams)->toBe(10);
 });

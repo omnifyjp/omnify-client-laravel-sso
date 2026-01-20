@@ -7,6 +7,7 @@ namespace Omnify\SsoClient\Http\Controllers\Admin;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controller;
+use Illuminate\Support\Str;
 use Omnify\SsoClient\Cache\RolePermissionCache;
 use Omnify\SsoClient\Models\Permission;
 use Omnify\SsoClient\Models\Role;
@@ -274,10 +275,11 @@ class RoleAdminController extends Controller
             'permissions.*' => ['required'],
         ]);
 
-        // Handle both IDs and slugs
+        // Handle both IDs (UUIDs) and slugs
         $permissionIds = collect($validated['permissions'])->map(function ($item) {
-            if (is_numeric($item)) {
-                return (int) $item;
+            // Check if it's a UUID (ID)
+            if (Str::isUuid($item)) {
+                return $item;
             }
 
             // Find by slug

@@ -4,11 +4,122 @@
 
 **Package Name:** `omnifyjp/omnify-client-laravel-sso`
 
-**Purpose:** Laravel package cung cấp Single Sign-On (SSO) integration với Omnify Console, bao gồm Role-Based Access Control (RBAC), team permissions, và các tính năng bảo mật toàn diện.
+**Purpose:** Laravel package cung cấp Single Sign-On (SSO) integration với Omnify Console, bao gồm Role-Based Access Control (RBAC), team permissions, **Branch-Level Permissions**, và các tính năng bảo mật toàn diện.
 
 **Requirements:**
 - PHP 8.2+
 - Laravel 11.0+ hoặc 12.0+
+
+---
+
+## IMPORTANT: Kiến trúc hệ thống
+
+> **Console** chỉ làm nhiệm vụ **xác thực (authentication)** và quản lý **subscription/access**.
+> **Mỗi Service** có **database riêng**, hoàn toàn độc lập với Console.
+
+### Phân chia trách nhiệm
+
+```
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                              OMNIFY CONSOLE                                  │
+│                    (Authentication & Subscription Provider)                  │
+│                                                                              │
+│   CHỈ làm các việc sau:                                                     │
+│   ┌─────────────────────────────────────────────────────────────────────┐   │
+│   │ 1. AUTHENTICATION (Xác thực)                                        │   │
+│   │    • User login/logout                                              │   │
+│   │    • JWT token issuance & validation                                │   │
+│   │    • Password management                                            │   │
+│   │                                                                     │   │
+│   │ 2. SUBSCRIPTION & ACCESS CONTROL                                    │   │
+│   │    • Plans & Pricing                                                │   │
+│   │    • User subscriptions                                             │   │
+│   │    • Cho phép user truy cập service nào                             │   │
+│   │    • Organization/Team structure (for access control)               │   │
+│   └─────────────────────────────────────────────────────────────────────┘   │
+│                                                                              │
+│   KHÔNG quản lý:                                                            │
+│   ✗ Service data                                                            │
+│   ✗ Service roles/permissions                                               │
+│   ✗ Business logic của services                                             │
+│                                                                              │
+└─────────────────────────────────────────────────────────────────────────────┘
+                                    │
+                         JWT Token (authentication only)
+                                    │
+                                    ▼
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                         SERVICE (với SSO Client Package)                     │
+│                            (Database riêng, độc lập)                         │
+│                                                                              │
+│   ┌─────────────────────────────────────────────────────────────────────┐   │
+│   │ DATABASE RIÊNG - Không liên quan đến Console                        │   │
+│   │                                                                     │   │
+│   │ • users (local user records, linked via console_user_id)            │   │
+│   │ • roles (service-specific roles)                                    │   │
+│   │ • permissions (service-specific permissions)                        │   │
+│   │ • role_user (role assignments với org/branch scope)                 │   │
+│   │ • teams, branches (local references nếu cần)                        │   │
+│   │ • [tất cả business data khác của service]                           │   │
+│   └─────────────────────────────────────────────────────────────────────┘   │
+│                                                                              │
+│   Service TỰ QUẢN LÝ:                                                       │
+│   ✓ Roles & Permissions                                                     │
+│   ✓ Authorization logic                                                     │
+│   ✓ Business data                                                           │
+│   ✓ User preferences/settings trong service                                 │
+│                                                                              │
+└─────────────────────────────────────────────────────────────────────────────┘
+```
+
+### Dữ liệu được quản lý ở đâu?
+
+| Data | Console | Service | Ghi chú |
+|------|---------|---------|---------|
+| **User Authentication** | ✅ | ❌ | Login, password, JWT |
+| **Plans & Subscriptions** | ✅ | ❌ | Pricing, billing |
+| **Service Access Control** | ✅ | ❌ | User được dùng service nào |
+| **Users (local)** | ❌ | ✅ | Lưu `console_user_id` để link |
+| **Roles** | ❌ | ✅ | Service tự định nghĩa |
+| **Permissions** | ❌ | ✅ | Service tự định nghĩa |
+| **Role Assignments** | ❌ | ✅ | Scoped by org/branch |
+| **Business Data** | ❌ | ✅ | Orders, products, etc. |
+
+### Authentication Flow
+
+```
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                         AUTHENTICATION FLOW                                  │
+└─────────────────────────────────────────────────────────────────────────────┘
+
+1. User truy cập Service
+   └─► Service redirect đến Console login
+
+2. User đăng nhập tại Console
+   └─► Console xác thực credentials
+   └─► Console kiểm tra user có quyền truy cập service không (subscription)
+   └─► Console issue JWT token
+
+3. Redirect về Service với JWT
+   └─► Service validate JWT signature (via JWKS)
+   └─► Service tạo/update local user record (console_user_id)
+   └─► Service tạo session
+
+4. Subsequent requests
+   └─► Service check local roles/permissions
+   └─► KHÔNG cần gọi Console API
+```
+
+### Tại sao thiết kế như vậy?
+
+| Lý do | Giải thích |
+|-------|------------|
+| **Database độc lập** | Service có thể scale, backup, migrate độc lập |
+| **Không single point of failure** | Console down ≠ Service down (sau khi đã login) |
+| **Domain-specific** | Mỗi service có roles/permissions phù hợp với domain |
+| **Performance** | Authorization check local, không network latency |
+| **Data isolation** | Service A không thể access data của Service B |
+| **Simple Console** | Console chỉ làm auth + subscription, không phình to |
 
 ---
 
@@ -19,6 +130,7 @@
 | JWT-Based SSO | Xác thực an toàn qua token exchange với Omnify Console |
 | UUID Primary Keys | Tất cả models sử dụng UUID để tương thích với Console |
 | Role-Based Access Control | Quản lý role và permission linh hoạt |
+| **Branch-Level Permissions** | **NEW!** Scoped role assignments cho multi-branch organizations |
 | Team Permissions | Quản lý permission cấp team qua Console API |
 | Minimal Schema | Chỉ lưu Console references, fetch data từ Console API |
 | Security Features | Open redirect protection, encrypted tokens, rate limiting |
@@ -149,38 +261,414 @@ Tất cả tables sử dụng UUID primary keys để tương thích với Conso
 | `roles` | Local roles | id (UUID), name, slug, level, description |
 | `permissions` | Local permissions | id (UUID), name, slug, group |
 | `role_permissions` | Role-Permission pivot | role_id, permission_id (composite PK) |
-| `role_user` | User-Role pivot | role_id, user_id (composite PK) |
+| `role_user` | User-Role pivot with scope | id (UUID), role_id, user_id, **console_org_id**, **console_branch_id** |
 | `teams` | Console team refs | id (UUID), console_team_id, console_org_id, name |
 | `branches` | Console branch refs | id (UUID), console_branch_id, console_org_id, code, name |
 | `team_permissions` | Team-level permissions | id (UUID), console_team_id, console_org_id, permission_id |
 
+> **Note:** `role_user` table now has `console_org_id` and `console_branch_id` for scoped role assignments (Branch-Level Permissions).
+
 ### Entity Relationship Diagram
 
 ```
-┌─────────┐       ┌──────────────────┐       ┌─────────────┐
-│  User   │───M:M─│    role_user     │───M:M─│    Role     │
-│  (UUID) │       │ (composite PK)   │       │   (UUID)    │
-└─────────┘       └──────────────────┘       └──────┬──────┘
-     │                                              │
-     │                                              │ M:M
-     │                                              │
-     │            ┌──────────────────┐       ┌──────┴──────┐
-     │            │ role_permissions │───────│ Permission  │
-     │            │ (composite PK)   │       │   (UUID)    │
-     │            └──────────────────┘       └──────┬──────┘
-     │                                              │
-     │                                              │ 1:M
-     │                                              │
-┌────┴────┐       ┌──────────────────┐       ┌──────┴──────┐
-│  Team   │───────│ team_permissions │───────│TeamPermission│
-│  (UUID) │       │    (UUID)        │       │   (UUID)    │
-└─────────┘       └──────────────────┘       └─────────────┘
+┌─────────┐       ┌──────────────────────────┐       ┌─────────────┐
+│  User   │───M:M─│       role_user          │───M:M─│    Role     │
+│  (UUID) │       │ + console_org_id (scope) │       │   (UUID)    │
+└─────────┘       │ + console_branch_id      │       └──────┬──────┘
+     │            └──────────────────────────┘              │
+     │                                                      │ M:M
+     │                                                      │
+     │            ┌──────────────────┐              ┌──────┴──────┐
+     │            │ role_permissions │──────────────│ Permission  │
+     │            │ (composite PK)   │              │   (UUID)    │
+     │            └──────────────────┘              └──────┬──────┘
+     │                                                     │
+     │                                                     │ 1:M
+     │                                                     │
+┌────┴────┐       ┌──────────────────┐              ┌──────┴──────┐
+│  Team   │───────│ team_permissions │──────────────│TeamPermission│
+│  (UUID) │       │    (UUID)        │              │   (UUID)    │
+└─────────┘       └──────────────────┘              └─────────────┘
 
 ┌─────────┐
-│ Branch  │  (standalone reference)
+│ Branch  │  (Console reference for branch-level permissions)
 │  (UUID) │
 └─────────┘
 ```
+
+---
+
+## Branch-Level Permissions (Scoped Role Assignments)
+
+### Overview
+
+Package này implement **Scoped Role Assignments** (Option B) theo industry standard được sử dụng bởi các enterprise SaaS platforms như Hubspot, Salesforce, và WorkOS.
+
+**Tham khảo:**
+- [NIST RBAC Standard (ANSI/INCITS 359-2012)](https://csrc.nist.gov/Projects/Role-Based-Access-Control)
+- [WorkOS: Multi-Tenant RBAC Design](https://workos.com/blog/how-to-design-multi-tenant-rbac-saas)
+- [Aserto: Multi-Tenant RBAC](https://www.aserto.com/blog/authorization-101-multi-tenant-rbac)
+- [Permit.io: Multi-Tenant Authorization](https://www.permit.io/blog/best-practices-for-multi-tenant-authorization)
+
+### Key Concept
+
+> "Every authorization decision must be tenant-aware. You don't just check 'is user an admin?', you check 'is user an admin **in this tenant**?'"
+> — WorkOS
+
+Thay vì tạo multiple roles ("Admin (Tokyo)", "Admin (Osaka)"...), roles được define một lần (global templates) và **assignments** được scoped:
+
+```
+Role (template/definition) - GLOBAL
+├─ "Admin" (level 100)
+├─ "Manager" (level 50)
+└─ "Staff" (level 10)
+
+role_user (pivot) - SCOPED
+├─ user=A, role=Admin, org=null, branch=null     → Global Admin
+├─ user=B, role=Admin, org=X, branch=null        → Org-wide Admin (all branches)
+├─ user=C, role=Admin, org=X, branch=tokyo       → Tokyo Admin only
+├─ user=C, role=Staff, org=X, branch=osaka       → Same user: Staff at Osaka
+└─ user=D, role=Manager, org=X, branch=null      → Manager everywhere in org X
+```
+
+### Scope Hierarchy
+
+```
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                              SCOPE HIERARCHY                                 │
+└─────────────────────────────────────────────────────────────────────────────┘
+
+                    ┌─────────────────────────┐
+                    │      GLOBAL SCOPE       │
+                    │   org_id = null         │
+                    │   branch_id = null      │
+                    │                         │
+                    │   Example: System Admin │
+                    │   Can access EVERYTHING │
+                    └───────────┬─────────────┘
+                                │
+            ┌───────────────────┼───────────────────┐
+            ▼                   ▼                   ▼
+    ┌───────────────┐   ┌───────────────┐   ┌───────────────┐
+    │   ORG SCOPE   │   │   ORG SCOPE   │   │   ORG SCOPE   │
+    │   org_id = A  │   │   org_id = B  │   │   org_id = C  │
+    │ branch_id=null│   │ branch_id=null│   │ branch_id=null│
+    │               │   │               │   │               │
+    │  Org Manager  │   │  Org Manager  │   │  Org Manager  │
+    │  All branches │   │  All branches │   │  All branches │
+    └───────┬───────┘   └───────────────┘   └───────────────┘
+            │
+    ┌───────┴───────────────────┐
+    ▼                           ▼
+┌───────────────┐       ┌───────────────┐
+│ BRANCH SCOPE  │       │ BRANCH SCOPE  │
+│  org_id = A   │       │  org_id = A   │
+│ branch_id = 1 │       │ branch_id = 2 │
+│               │       │               │
+│  Tokyo Staff  │       │  Osaka Staff  │
+│  Only Tokyo   │       │  Only Osaka   │
+└───────────────┘       └───────────────┘
+```
+
+### Permission Resolution Flow
+
+Khi kiểm tra permission, hệ thống aggregates permissions từ tất cả applicable roles:
+
+```
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                        PERMISSION RESOLUTION FLOW                            │
+└─────────────────────────────────────────────────────────────────────────────┘
+
+                    ┌─────────────────┐
+                    │  API Request    │
+                    │  X-Org-Id: A    │
+                    │  X-Branch-Id: 1 │
+                    └────────┬────────┘
+                             │
+                             ▼
+              ┌──────────────────────────────┐
+              │    Get User's Role           │
+              │    Assignments               │
+              └──────────────┬───────────────┘
+                             │
+         ┌───────────────────┼───────────────────┐
+         ▼                   ▼                   ▼
+┌─────────────────┐ ┌─────────────────┐ ┌─────────────────┐
+│ Global Roles    │ │ Org-wide Roles  │ │ Branch Roles    │
+│ org=null        │ │ org=A           │ │ org=A           │
+│ branch=null     │ │ branch=null     │ │ branch=1        │
+│                 │ │                 │ │                 │
+│ [System Admin]  │ │ [Org Manager]   │ │ [Tokyo Staff]   │
+└────────┬────────┘ └────────┬────────┘ └────────┬────────┘
+         │                   │                   │
+         └───────────────────┼───────────────────┘
+                             │
+                             ▼
+              ┌──────────────────────────────┐
+              │   Aggregate Permissions      │
+              │   from all applicable roles  │
+              │                              │
+              │   + Team Permissions         │
+              │   (unchanged from current)   │
+              └──────────────┬───────────────┘
+                             │
+                             ▼
+              ┌──────────────────────────────┐
+              │   Final Permission Set       │
+              │   ['orders.create',          │
+              │    'orders.view',            │
+              │    'reports.view', ...]      │
+              └──────────────────────────────┘
+```
+
+### Database Schema
+
+**role_user pivot table:**
+
+```sql
+CREATE TABLE role_user (
+    id UUID PRIMARY KEY,
+    role_id UUID REFERENCES roles(id) ON DELETE CASCADE,
+    user_id UUID REFERENCES users(id) ON DELETE CASCADE,
+    console_org_id VARCHAR(36) NULL,     -- null = global
+    console_branch_id VARCHAR(36) NULL,  -- null = org-wide
+    created_at TIMESTAMP,
+    updated_at TIMESTAMP,
+
+    INDEX (user_id, console_org_id, console_branch_id),
+    INDEX (role_id, user_id)
+);
+```
+
+**Example Data:**
+
+| id | user_id | role_id | console_org_id | console_branch_id | Meaning |
+|----|---------|---------|----------------|-------------------|---------|
+| 1 | user-A | admin | null | null | Global Admin |
+| 2 | user-B | manager | org-X | null | Org-wide Manager |
+| 3 | user-C | admin | org-X | branch-tokyo | Tokyo Admin |
+| 4 | user-C | staff | org-X | branch-osaka | Osaka Staff (same user!) |
+| 5 | user-D | staff | org-X | branch-tokyo | Tokyo Staff |
+
+### API Usage
+
+#### Headers
+
+| Header | Required | Description |
+|--------|----------|-------------|
+| `Authorization` | Yes | Bearer token |
+| `X-Org-Id` | Yes | Organization slug |
+| `X-Branch-Id` | No | Branch UUID (for branch-specific operations) |
+
+#### Assign Role to User
+
+```http
+POST /api/admin/sso/users/{userId}/roles
+Content-Type: application/json
+Authorization: Bearer {token}
+X-Org-Id: my-org
+
+{
+  "role_id": "uuid-of-role",
+  "console_org_id": "uuid-of-org",        // null = global
+  "console_branch_id": "uuid-of-branch"   // null = org-wide
+}
+```
+
+**Scope Examples:**
+
+```json
+// Global Admin (can access everything)
+{ "role_id": "admin-uuid", "console_org_id": null, "console_branch_id": null }
+
+// Org-wide Manager (all branches in org)
+{ "role_id": "manager-uuid", "console_org_id": "org-uuid", "console_branch_id": null }
+
+// Branch-specific Staff (only Tokyo branch)
+{ "role_id": "staff-uuid", "console_org_id": "org-uuid", "console_branch_id": "tokyo-branch-uuid" }
+```
+
+#### List User's Role Assignments
+
+```http
+GET /api/admin/sso/users/{userId}/roles
+Authorization: Bearer {token}
+X-Org-Id: my-org
+```
+
+**Response:**
+
+```json
+{
+  "data": [
+    {
+      "id": "assignment-uuid",
+      "role": {
+        "id": "role-uuid",
+        "name": "Admin",
+        "slug": "admin",
+        "level": 100
+      },
+      "console_org_id": null,
+      "console_branch_id": null,
+      "scope": "global",
+      "created_at": "2024-01-15T10:30:00.000000Z"
+    },
+    {
+      "id": "assignment-uuid-2",
+      "role": {
+        "id": "role-uuid-2",
+        "name": "Staff",
+        "slug": "staff",
+        "level": 10
+      },
+      "console_org_id": "org-uuid",
+      "console_branch_id": "branch-uuid",
+      "scope": "branch",
+      "created_at": "2024-01-15T10:35:00.000000Z"
+    }
+  ]
+}
+```
+
+#### Remove Role Assignment
+
+```http
+DELETE /api/admin/sso/users/{userId}/roles/{roleId}
+Content-Type: application/json
+Authorization: Bearer {token}
+X-Org-Id: my-org
+
+{
+  "console_org_id": "org-uuid",
+  "console_branch_id": "branch-uuid"
+}
+```
+
+#### Sync Roles in Scope
+
+```http
+PUT /api/admin/sso/users/{userId}/roles/sync
+Content-Type: application/json
+Authorization: Bearer {token}
+X-Org-Id: my-org
+
+{
+  "roles": ["manager", "viewer"],  // Role slugs or UUIDs
+  "console_org_id": "org-uuid",
+  "console_branch_id": null        // Sync org-wide roles
+}
+```
+
+### PHP Usage
+
+#### Assign Roles with Scope
+
+```php
+$user = User::find($userId);
+$adminRole = Role::where('slug', 'admin')->first();
+$staffRole = Role::where('slug', 'staff')->first();
+
+// Global admin (can do everything everywhere)
+$user->assignRole($adminRole);  // org=null, branch=null
+
+// Org-wide manager (all branches in org)
+$user->assignRole($managerRole, $orgId);  // branch=null
+
+// Branch-specific staff (only Tokyo branch)
+$user->assignRole($staffRole, $orgId, $tokyoBranchId);
+
+// Same user can have different roles in different branches
+$user->assignRole('admin', $orgId, $tokyoBranchId);
+$user->assignRole('staff', $orgId, $osakaBranchId);
+```
+
+#### Check Permissions
+
+```php
+// With explicit context
+$user->hasPermission('orders.create', $orgId, $branchId);
+
+// With session context (set by middleware)
+$user->hasPermission('orders.create');
+
+// Check any/all permissions
+$user->hasAnyPermission(['orders.create', 'orders.view'], $orgId, $branchId);
+$user->hasAllPermissions(['orders.create', 'orders.view'], $orgId, $branchId);
+```
+
+#### Get Roles for Context
+
+```php
+// Get roles for branch context (includes global + org-wide + branch-specific)
+$roles = $user->getRolesForContext($orgId, $branchId);
+
+// Get roles for org context (includes global + org-wide only)
+$roles = $user->getRolesForContext($orgId);
+
+// Get global roles only
+$roles = $user->getRolesForContext();
+
+// Get all role assignments with scope info
+$assignments = $user->getRoleAssignments();
+foreach ($assignments as $role) {
+    echo "{$role->name}: {$role->pivot->console_org_id} / {$role->pivot->console_branch_id}";
+}
+```
+
+#### Check Role Level
+
+```php
+// Get highest role level in context
+$level = $user->getHighestRoleLevelInContext($orgId, $branchId);
+
+if ($level >= 50) {  // Manager level or above
+    // Allow management actions
+}
+
+// Check specific role in context
+if ($user->hasRoleInContext('admin', $orgId, $branchId)) {
+    // User is admin at this branch
+}
+```
+
+### Middleware
+
+Middleware tự động set context từ headers:
+
+```php
+// In routes/api.php
+Route::middleware(['sso.auth', 'sso.org'])->group(function () {
+    // sso.org middleware reads:
+    // - X-Org-Id header (required) → sets orgId in session/request
+    // - X-Branch-Id header (optional) → sets branchId in session/request
+
+    Route::middleware('sso.permission:orders.create')->group(function () {
+        // Permission check considers branch context automatically
+        Route::post('/orders', [OrderController::class, 'store']);
+    });
+
+    Route::middleware('sso.role:admin')->group(function () {
+        // Role level check considers branch context automatically
+        Route::delete('/orders/{order}', [OrderController::class, 'destroy']);
+    });
+});
+```
+
+### Backward Compatibility
+
+Existing code tiếp tục hoạt động:
+
+- Existing role assignments có `console_org_id = null` và `console_branch_id = null`
+- Chúng được coi là **global roles**
+- Permission checks không có branch context vẫn work như trước
+
+### Security Considerations
+
+1. **Branch Validation**: Middleware validate branch thuộc về organization
+2. **Scope Escalation Prevention**: Admin của branch không thể tạo org-wide assignments
+3. **Header Validation**: X-Branch-Id phải là valid UUID
+4. **Audit Logging**: All role assignment changes được logged
 
 ---
 
@@ -467,6 +955,7 @@ GET    /api/sso/branches
 ### Admin Routes (sso.auth + sso.org + sso.role:admin)
 
 ```
+# Roles
 GET    /api/admin/sso/roles
 POST   /api/admin/sso/roles
 GET    /api/admin/sso/roles/{id}
@@ -474,15 +963,25 @@ PUT    /api/admin/sso/roles/{id}
 DELETE /api/admin/sso/roles/{id}
 GET    /api/admin/sso/roles/{role}/permissions
 PUT    /api/admin/sso/roles/{role}/permissions
+
+# Permissions
 GET    /api/admin/sso/permissions
 POST   /api/admin/sso/permissions
 GET    /api/admin/sso/permissions/{id}
 PUT    /api/admin/sso/permissions/{id}
 DELETE /api/admin/sso/permissions/{id}
 GET    /api/admin/sso/permission-matrix
+
+# Team Permissions
 GET    /api/admin/sso/team-permissions
 POST   /api/admin/sso/team-permissions
 DELETE /api/admin/sso/team-permissions/{id}
+
+# User Role Assignments (NEW - Branch-Level Permissions)
+GET    /api/admin/sso/users/{userId}/roles          # List user's role assignments
+POST   /api/admin/sso/users/{userId}/roles          # Assign role with scope
+PUT    /api/admin/sso/users/{userId}/roles/sync     # Sync roles in scope
+DELETE /api/admin/sso/users/{userId}/roles/{roleId} # Remove role assignment
 ```
 
 ---

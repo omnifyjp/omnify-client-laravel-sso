@@ -30,7 +30,6 @@ class RolePermissionResourceBase extends JsonResource
     protected function schemaArray(Request $request): array
     {
         return [
-            'id' => $this->id,
             'role_id' => $this->role_id,
             'role' => $this->whenLoaded('role', fn() => new RoleResource($this->role)),
             'permission_id' => $this->permission_id,

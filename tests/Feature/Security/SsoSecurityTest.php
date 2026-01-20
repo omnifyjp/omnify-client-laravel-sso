@@ -385,8 +385,8 @@ describe('Rate Limiting', function () {
 
 describe('Data Exposure Prevention', function () {
     test('user endpoint does not expose sensitive data', function () {
+        // SSO users don't have passwords - authentication is via Console tokens
         $user = User::factory()->create([
-            'password' => bcrypt('secret'),
             'console_access_token' => 'encrypted-token',
             'console_refresh_token' => 'encrypted-refresh',
         ]);
@@ -401,12 +401,9 @@ describe('Data Exposure Prevention', function () {
         $response->assertStatus(200);
         $data = $response->json();
 
-        // Should not contain sensitive fields
-        expect($data)->not->toHaveKey('password');
-        expect($data['user'])->not->toHaveKey('password');
+        // Should not contain sensitive fields (SSO tokens)
         expect($data['user'])->not->toHaveKey('console_access_token');
         expect($data['user'])->not->toHaveKey('console_refresh_token');
-        expect($data['user'])->not->toHaveKey('remember_token');
     });
 
     test('callback response does not expose internal errors', function () {

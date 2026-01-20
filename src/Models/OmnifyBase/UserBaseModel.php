@@ -121,6 +121,7 @@ class UserBaseModel extends BaseModel
     public function roles(): BelongsToMany
     {
         return $this->belongsToMany(Role::class, 'role_user')
+            ->withPivot('console_org_id', 'console_branch_id')
             ->withTimestamps();
     }
 }

@@ -7,9 +7,11 @@ displayName:
   vi: Quyền vai trò
 
 options:
+  id: false
   timestamps: true
-  idType: Uuid
   tableName: role_permissions
+  unique:
+    - [role, permission]
 
 properties:
   role:

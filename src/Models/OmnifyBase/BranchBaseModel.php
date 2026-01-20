@@ -30,6 +30,8 @@ use Illuminate\Database\Eloquent\SoftDeletes;
  * @property mixed $console_org_id
  * @property string $code
  * @property string $name
+ * @property bool $is_headquarters
+ * @property bool $is_active
  */
 class BranchBaseModel extends BaseModel
 {
@@ -85,6 +87,8 @@ class BranchBaseModel extends BaseModel
         'console_org_id',
         'code',
         'name',
+        'is_headquarters',
+        'is_active',
     ];
 
     /**
@@ -107,7 +111,8 @@ class BranchBaseModel extends BaseModel
     protected function casts(): array
     {
         return [
-
+            'is_headquarters' => 'boolean',
+            'is_active' => 'boolean',
         ];
     }
 

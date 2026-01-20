@@ -16,6 +16,8 @@ options:
     - columns: [console_org_id]
     - columns: [console_org_id, code]
       unique: true
+    - columns: [console_org_id, is_active]
+    - columns: [console_org_id, is_headquarters]
 
 properties:
   # Console reference
@@ -62,3 +64,23 @@ properties:
       ja: 支店名
       en: Branch Name
       vi: Tên chi nhánh
+
+  is_headquarters:
+    type: Boolean
+    default: false
+    displayName:
+      ja: 本社
+      en: Is Headquarters
+      vi: Là trụ sở chính
+    description:
+      ja: この支店が組織の本社かどうか
+      en: Whether this is the main headquarters of the organization
+      vi: Chi nhánh này có phải là trụ sở chính không
+
+  is_active:
+    type: Boolean
+    default: true
+    displayName:
+      ja: 有効
+      en: Active
+      vi: Hoạt động
