@@ -7,7 +7,7 @@
  * Kiểm thử đơn vị cho Model Team
  */
 
-use Omnify\SsoClient\Models\Team;
+use Omnify\SsoClient\Models\TeamCache as Team;
 use Illuminate\Support\Str;
 
 beforeEach(function () {

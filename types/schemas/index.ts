@@ -23,16 +23,26 @@ export {
 } from '@omnify-base/schemas/i18n';
 
 // Models (with Zod schemas, i18n, and Create/Update types)
-export type { Branch, BranchCreate, BranchUpdate } from './Branch';
+export type { BranchCache, BranchCacheCreate, BranchCacheUpdate } from './BranchCache';
 export {
-  branchSchemas,
-  branchCreateSchema,
-  branchUpdateSchema,
-  branchI18n,
-  getBranchLabel,
-  getBranchFieldLabel,
-  getBranchFieldPlaceholder,
-} from './Branch';
+  branchCacheSchemas,
+  branchCacheCreateSchema,
+  branchCacheUpdateSchema,
+  branchCacheI18n,
+  getBranchCacheLabel,
+  getBranchCacheFieldLabel,
+  getBranchCacheFieldPlaceholder,
+} from './BranchCache';
+export type { OrganizationCache, OrganizationCacheCreate, OrganizationCacheUpdate } from './OrganizationCache';
+export {
+  organizationCacheSchemas,
+  organizationCacheCreateSchema,
+  organizationCacheUpdateSchema,
+  organizationCacheI18n,
+  getOrganizationCacheLabel,
+  getOrganizationCacheFieldLabel,
+  getOrganizationCacheFieldPlaceholder,
+} from './OrganizationCache';
 export type { Permission, PermissionCreate, PermissionUpdate } from './Permission';
 export {
   permissionSchemas,
@@ -63,16 +73,16 @@ export {
   getRolePermissionFieldLabel,
   getRolePermissionFieldPlaceholder,
 } from './RolePermission';
-export type { Team, TeamCreate, TeamUpdate } from './Team';
+export type { TeamCache, TeamCacheCreate, TeamCacheUpdate } from './TeamCache';
 export {
-  teamSchemas,
-  teamCreateSchema,
-  teamUpdateSchema,
-  teamI18n,
-  getTeamLabel,
-  getTeamFieldLabel,
-  getTeamFieldPlaceholder,
-} from './Team';
+  teamCacheSchemas,
+  teamCacheCreateSchema,
+  teamCacheUpdateSchema,
+  teamCacheI18n,
+  getTeamCacheLabel,
+  getTeamCacheFieldLabel,
+  getTeamCacheFieldPlaceholder,
+} from './TeamCache';
 export type { TeamPermission, TeamPermissionCreate, TeamPermissionUpdate } from './TeamPermission';
 export {
   teamPermissionSchemas,
@@ -83,13 +93,13 @@ export {
   getTeamPermissionFieldLabel,
   getTeamPermissionFieldPlaceholder,
 } from './TeamPermission';
-export type { User, UserCreate, UserUpdate } from './User';
+export type { UserCache, UserCacheCreate, UserCacheUpdate } from './UserCache';
 export {
-  userSchemas,
-  userCreateSchema,
-  userUpdateSchema,
-  userI18n,
-  getUserLabel,
-  getUserFieldLabel,
-  getUserFieldPlaceholder,
-} from './User';
+  userCacheSchemas,
+  userCacheCreateSchema,
+  userCacheUpdateSchema,
+  userCacheI18n,
+  getUserCacheLabel,
+  getUserCacheFieldLabel,
+  getUserCacheFieldPlaceholder,
+} from './UserCache';

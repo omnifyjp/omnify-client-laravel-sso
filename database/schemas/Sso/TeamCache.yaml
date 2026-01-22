@@ -1,0 +1,50 @@
+# TeamCache - cached from Console API
+# Stores basic team info for local lookup
+
+kind: object
+
+displayName:
+  ja: チームキャッシュ
+  en: Team Cache
+  vi: Cache Nhóm
+
+options:
+  timestamps: true
+  softDelete: true
+  idType: Uuid
+  indexes:
+    - columns: [console_org_id]
+
+properties:
+  # Console reference
+  console_team_id:
+    type: Uuid
+    unique: true
+    displayName:
+      ja: Console Team ID
+      en: Console Team ID
+      vi: Console Team ID
+    description:
+      ja: Console側のチームID
+      en: Team ID from Console
+      vi: ID nhóm từ Console
+
+  console_org_id:
+    type: Uuid
+    displayName:
+      ja: Console Organization ID
+      en: Console Organization ID
+      vi: Console Organization ID
+    description:
+      ja: Console側の組織ID
+      en: Organization ID from Console
+      vi: ID tổ chức từ Console
+
+  # Cached basic info (synced from Console)
+  name:
+    type: String
+    length: 100
+    displayName:
+      ja: チーム名
+      en: Team Name
+      vi: Tên nhóm

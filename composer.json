@@ -37,11 +37,11 @@
     },
     "autoload": {
         "psr-4": {
-            "Omnify\\SsoClient\\": "src/",
+            "Omnify\\SsoClient\\": "app/",
             "Omnify\\SsoClient\\Database\\Factories\\": "database/factories/"
         },
         "files": [
-            "src/helpers.php"
+            "app/helpers.php"
         ]
     },
     "autoload-dev": {

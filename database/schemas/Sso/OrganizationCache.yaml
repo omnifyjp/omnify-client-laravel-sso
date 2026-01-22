@@ -1,0 +1,58 @@
+# OrganizationCache - cached from Console API
+# Stores basic organization info for local lookup
+
+kind: object
+
+displayName:
+  ja: 組織キャッシュ
+  en: Organization Cache
+  vi: Cache Tổ chức
+
+options:
+  timestamps: true
+  softDelete: true
+  idType: Uuid
+  indexes:
+    - columns: [code]
+      unique: true
+
+properties:
+  console_org_id:
+    type: Uuid
+    unique: true
+    displayName:
+      ja: Console Organization ID
+      en: Console Organization ID
+      vi: Console Organization ID
+    description:
+      ja: Console側の組織ID
+      en: Organization ID from Console
+      vi: ID tổ chức từ Console
+
+  name:
+    type: String
+    length: 100
+    displayName:
+      ja: 組織名
+      en: Organization Name
+      vi: Tên tổ chức
+
+  code:
+    type: String
+    length: 20
+    displayName:
+      ja: 組織コード
+      en: Organization Code
+      vi: Mã tổ chức
+    description:
+      ja: ユニークな組織コード
+      en: Unique organization code
+      vi: Mã tổ chức duy nhất
+
+  is_active:
+    type: Boolean
+    default: true
+    displayName:
+      ja: 有効
+      en: Active
+      vi: Hoạt động

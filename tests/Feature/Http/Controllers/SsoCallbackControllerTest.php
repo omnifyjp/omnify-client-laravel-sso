@@ -132,7 +132,7 @@ test('callback creates new user when user does not exist', function () {
         ->assertJsonPath('user.console_user_id', 999);
 
     // ユーザーがDBに作成されたことを確認
-    $this->assertDatabaseHas('users', [
+    $this->assertDatabaseHas('user_caches', [
         'console_user_id' => 999,
         'email' => 'newuser@example.com',
         'name' => 'New User',
@@ -195,7 +195,7 @@ test('callback updates existing user', function () {
         ->assertJsonPath('user.name', 'Updated Name');
 
     // ユーザーが更新されたことを確認
-    $this->assertDatabaseHas('users', [
+    $this->assertDatabaseHas('user_caches', [
         'id' => $existingUser->id,
         'email' => 'updated@example.com',
         'name' => 'Updated Name',
@@ -549,7 +549,7 @@ test('callback handles special characters in user name', function () {
     $response->assertStatus(200);
 
     // 名前が保存されていることを確認
-    $this->assertDatabaseHas('users', [
+    $this->assertDatabaseHas('user_caches', [
         'console_user_id' => 666,
     ]);
 });

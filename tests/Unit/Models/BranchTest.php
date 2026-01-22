@@ -7,7 +7,7 @@
  * Kiểm thử đơn vị cho Model Branch
  */
 
-use Omnify\SsoClient\Models\Branch;
+use Omnify\SsoClient\Models\BranchCache as Branch;
 use Illuminate\Support\Str;
 
 beforeEach(function () {

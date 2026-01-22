@@ -1,0 +1,89 @@
+<?php
+
+declare(strict_types=1);
+
+namespace Omnify\SsoClient\Http\Middleware;
+
+use Closure;
+use Illuminate\Http\Request;
+use Omnify\SsoClient\Models\BranchCache;
+use Symfony\Component\HttpFoundation\Response;
+
+/**
+ * Middleware that sets branch context from X-Branch-Id header.
+ *
+ * This is a simpler alternative to SsoOrganizationAccess that:
+ * - Does not require organization context
+ * - Auto-creates branch record if it doesn't exist (lazy sync from SSO Console)
+ * - Useful for services where branch selection is handled by frontend
+ *
+ * Headers read:
+ * - X-Branch-Id (required): Console branch UUID
+ * - X-Org-Id (optional): Console organization UUID (for auto-creation)
+ * - X-Branch-Name (optional): Branch name (for auto-creation)
+ * - X-Branch-Code (optional): Branch code (for auto-creation)
+ *
+ * Sets request attributes:
+ * - branch: Branch model instance
+ * - branchId: Console branch UUID
+ *
+ * @example
+ * // In bootstrap/app.php
+ * $middleware->append(\Omnify\SsoClient\Http\Middleware\SetBranchFromHeader::class);
+ *
+ * // In controller
+ * $branch = $request->attributes->get('branch');
+ * if ($branch) {
+ *     $project = Project::create([
+ *         'console_org_id' => $branch->console_org_id,
+ *         'console_branch_id' => $branch->console_branch_id,
+ *         // ...
+ *     ]);
+ * }
+ */
+class SetBranchFromHeader
+{
+    /**
+     * Handle an incoming request.
+     */
+    public function handle(Request $request, Closure $next): Response
+    {
+        // Skip if branch is already set (by SsoOrganizationAccess middleware)
+        if ($request->attributes->has('branch')) {
+            return $next($request);
+        }
+
+        // Get branch ID from header (this is console_branch_id from SSO Console)
+        $consoleBranchId = $request->header('X-Branch-Id');
+
+        if ($consoleBranchId) {
+            // Look up by console_branch_id (UUID from SSO), not by local id
+            $branch = BranchCache::where('console_branch_id', $consoleBranchId)->first();
+
+            // Auto-create branch if it doesn't exist (lazy sync)
+            if (! $branch) {
+                $consoleOrgId = $request->header('X-Org-Id');
+                $branchName = $request->header('X-Branch-Name');
+                $branchCode = $request->header('X-Branch-Code');
+
+                if ($consoleOrgId) {
+                    $branch = BranchCache::create([
+                        'console_branch_id' => $consoleBranchId,
+                        'console_org_id' => $consoleOrgId,
+                        'code' => $branchCode ?? 'DEFAULT',
+                        'name' => $branchName ?? 'Default Branch',
+                        'is_headquarters' => true,
+                        'is_active' => true,
+                    ]);
+                }
+            }
+
+            if ($branch) {
+                $request->attributes->set('branch', $branch);
+                $request->attributes->set('branchId', $consoleBranchId);
+            }
+        }
+
+        return $next($request);
+    }
+}

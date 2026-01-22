@@ -1,14 +1,14 @@
 {
   "version": 2,
-  "updatedAt": "2026-01-20T04:00:50.216Z",
+  "updatedAt": "2026-01-22T02:03:31.487Z",
   "driver": "mysql",
   "schemas": {
-    "Branch": {
-      "name": "Branch",
+    "BranchCache": {
+      "name": "BranchCache",
       "kind": "object",
-      "hash": "f1a1b1a536898c412fbce3ff60a5f81cb69466d24f9aa89265c6f1d32301d8ed",
-      "relativePath": "Sso/Branch.yaml",
-      "modifiedAt": "2026-01-19T16:03:09.836Z",
+      "hash": "65020f2149799983b005ed5ba702be0668261cbf73647a04797f316275c32478",
+      "relativePath": "Sso/BranchCache.yaml",
+      "modifiedAt": "2026-01-22T01:59:53.447Z",
       "properties": {
         "console_branch_id": {
           "type": "Uuid",
@@ -64,6 +64,42 @@
             "is_headquarters"
           ],
           "unique": false
+        }
+      ]
+    },
+    "OrganizationCache": {
+      "name": "OrganizationCache",
+      "kind": "object",
+      "hash": "c6c6135491e5e6e230a71128e0eb40afb65e5ee9eaa98c8fda81ddfbbd53d58a",
+      "relativePath": "Sso/OrganizationCache.yaml",
+      "modifiedAt": "2026-01-22T01:59:57.491Z",
+      "properties": {
+        "console_org_id": {
+          "type": "Uuid",
+          "unique": true
+        },
+        "name": {
+          "type": "String",
+          "length": 100
+        },
+        "code": {
+          "type": "String",
+          "length": 20
+        },
+        "is_active": {
+          "type": "Boolean",
+          "default": true
+        }
+      },
+      "idType": "Uuid",
+      "timestamps": true,
+      "softDelete": true,
+      "indexes": [
+        {
+          "columns": [
+            "code"
+          ],
+          "unique": true
         }
       ]
     },
@@ -161,12 +197,12 @@
         ]
       ]
     },
-    "Team": {
-      "name": "Team",
+    "TeamCache": {
+      "name": "TeamCache",
       "kind": "object",
-      "hash": "cae85811509f3166e17ff5475da17f4931158d3c15ab3292369e4d11f88dbf95",
-      "relativePath": "Sso/Team.yaml",
-      "modifiedAt": "2026-01-19T10:52:46.138Z",
+      "hash": "810e4f127bc7a94b0dff97f63fa5bf75df13ab69af42b066e6e65501e0a9075d",
+      "relativePath": "Sso/TeamCache.yaml",
+      "modifiedAt": "2026-01-22T01:59:56.259Z",
       "properties": {
         "console_team_id": {
           "type": "Uuid",
@@ -224,12 +260,12 @@
         }
       ]
     },
-    "User": {
-      "name": "User",
+    "UserCache": {
+      "name": "UserCache",
       "kind": "object",
-      "hash": "bd5e0aa3bfce8c039f674024cc34474d41e56a5d76b2600b18024c124f68913b",
-      "relativePath": "Sso/User.yaml",
-      "modifiedAt": "2026-01-20T04:00:45.103Z",
+      "hash": "02e694d379adbd51616eca28e54ce728acbddcedd77b84bcdad0ce8b48fa694b",
+      "relativePath": "Sso/UserCache.yaml",
+      "modifiedAt": "2026-01-22T01:59:55.017Z",
       "properties": {
         "name": {
           "type": "String"
@@ -259,7 +295,7 @@
           "type": "Association",
           "relation": "ManyToMany",
           "target": "Role",
-          "joinTable": "role_user",
+          "joinTable": "role_user_cache",
           "pivotFields": {
             "console_org_id": {
               "type": "String",

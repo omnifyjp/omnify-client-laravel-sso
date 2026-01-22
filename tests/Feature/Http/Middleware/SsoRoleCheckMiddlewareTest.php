@@ -11,9 +11,9 @@
 
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Str;
-use Omnify\SsoClient\Models\Branch;
+use Omnify\SsoClient\Models\BranchCache as Branch;
 use Omnify\SsoClient\Models\Role;
-use Omnify\SsoClient\Models\User;
+use Omnify\SsoClient\Models\UserCache as User;
 use Omnify\SsoClient\Services\OrgAccessService;
 
 beforeEach(function () {
@@ -35,14 +35,14 @@ beforeEach(function () {
     Role::create(['name' => 'Member', 'slug' => 'member', 'level' => 10]);
 
     // Create branches for testing
-    Branch::create([
+    \Omnify\SsoClient\Models\BranchCache::create([
         'console_branch_id' => $this->tokyoBranchId,
         'console_org_id' => $this->orgId,
         'code' => 'TKY',
         'name' => 'Tokyo Branch',
         'is_headquarters' => true,
     ]);
-    Branch::create([
+    \Omnify\SsoClient\Models\BranchCache::create([
         'console_branch_id' => $this->osakaBranchId,
         'console_org_id' => $this->orgId,
         'code' => 'OSK',

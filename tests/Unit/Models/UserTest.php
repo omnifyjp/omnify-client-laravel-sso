@@ -9,7 +9,7 @@
  * Updated for UUID primary keys and ManyToMany roles
  */
 
-use Omnify\SsoClient\Models\User;
+use Omnify\SsoClient\Models\UserCache as User;
 use Omnify\SsoClient\Models\Role;
 use Illuminate\Contracts\Auth\Authenticatable as AuthenticatableContract;
 use Illuminate\Contracts\Auth\Access\Authorizable as AuthorizableContract;

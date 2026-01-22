@@ -36,13 +36,14 @@ class OmnifyServiceProvider extends ServiceProvider
 
         // Register morph map for polymorphic relationships
         Relation::enforceMorphMap([
-            'Branch' => \Omnify\SsoClient\Models\Branch::class,
+            'BranchCache' => \Omnify\SsoClient\Models\BranchCache::class,
+            'OrganizationCache' => \Omnify\SsoClient\Models\OrganizationCache::class,
             'Permission' => \Omnify\SsoClient\Models\Permission::class,
             'Role' => \Omnify\SsoClient\Models\Role::class,
             'RolePermission' => \Omnify\SsoClient\Models\RolePermission::class,
-            'Team' => \Omnify\SsoClient\Models\Team::class,
+            'TeamCache' => \Omnify\SsoClient\Models\TeamCache::class,
             'TeamPermission' => \Omnify\SsoClient\Models\TeamPermission::class,
-            'User' => \Omnify\SsoClient\Models\User::class,
+            'UserCache' => \Omnify\SsoClient\Models\UserCache::class,
         ]);
     }
 }

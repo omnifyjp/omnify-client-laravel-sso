@@ -12,8 +12,8 @@ const config: OmnifyConfig = {
       base: "./",
       modelNamespace: "Omnify\\SsoClient\\Models",
       baseModelNamespace: "Omnify\\SsoClient\\Models\\OmnifyBase",
-      modelsPath: "src/Models",
-      baseModelsPath: "src/Models/OmnifyBase",
+      modelsPath: "app/Models",
+      baseModelsPath: "app/Models/OmnifyBase",
     }),
   ],
   locale: {

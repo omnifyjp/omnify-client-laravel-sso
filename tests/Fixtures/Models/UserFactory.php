@@ -4,6 +4,7 @@ namespace Omnify\SsoClient\Tests\Fixtures\Models;
 
 use Illuminate\Database\Eloquent\Factories\Factory;
 use Illuminate\Support\Str;
+use Omnify\SsoClient\Models\UserCache as User;
 
 /**
  * テスト用Userファクトリー
