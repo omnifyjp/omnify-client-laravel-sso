@@ -84,7 +84,7 @@ class OrgAccessService
     /**
      * Clear access cache for user/org.
      */
-    public function clearCache(int $consoleUserId, ?string $orgSlug = null): void
+    public function clearCache(int|string $consoleUserId, ?string $orgSlug = null): void
     {
         if ($orgSlug) {
             Cache::forget($this->getCacheKey($consoleUserId, $orgSlug));
@@ -106,7 +106,7 @@ class OrgAccessService
     /**
      * Get cache key for org access.
      */
-    private function getCacheKey(int $consoleUserId, string $orgSlug): string
+    private function getCacheKey(int|string $consoleUserId, string $orgSlug): string
     {
         return self::CACHE_KEY_PREFIX.":{$consoleUserId}:{$orgSlug}";
     }

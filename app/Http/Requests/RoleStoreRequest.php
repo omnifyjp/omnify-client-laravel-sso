@@ -8,8 +8,8 @@
 
 namespace App\Http\Requests;
 
-use OpenApi\Attributes as OA;
 use App\Http\Requests\OmnifyBase\RoleStoreRequestBase;
+use OpenApi\Attributes as OA;
 
 #[OA\Schema(
     schema: 'RoleStoreRequest',

@@ -3,9 +3,9 @@
 namespace Omnify\SsoClient\Tests;
 
 use Illuminate\Foundation\Testing\RefreshDatabase;
-use Orchestra\Testbench\TestCase as OrchestraTestCase;
-use Omnify\SsoClient\SsoClientServiceProvider;
 use Omnify\SsoClient\Models\UserCache as User;
+use Omnify\SsoClient\SsoClientServiceProvider;
+use Orchestra\Testbench\TestCase as OrchestraTestCase;
 
 /**
  * Base TestCase

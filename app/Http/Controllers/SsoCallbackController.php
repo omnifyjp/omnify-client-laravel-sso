@@ -102,7 +102,7 @@ class SsoCallbackController extends Controller
 
         if (! $user) {
             // Create new user (SSO user - no password, authentication via Console tokens)
-            $user = new $userModel();
+            $user = new $userModel;
             $user->console_user_id = $claims['sub'];
             $user->email = $claims['email'];
             $user->name = $claims['name'];
@@ -259,7 +259,7 @@ class SsoCallbackController extends Controller
         $requestedUri = $request->query('redirect_uri');
 
         // Validate redirect URL to prevent Open Redirect attacks
-        $validator = new RedirectUrlValidator();
+        $validator = new RedirectUrlValidator;
         $redirectUri = $validator->validate(
             $requestedUri,
             url('/')

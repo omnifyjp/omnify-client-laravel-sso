@@ -8,9 +8,9 @@
 
 namespace App\Http\Resources;
 
+use App\Http\Resources\OmnifyBase\TeamResourceBase;
 use Illuminate\Http\Request;
 use OpenApi\Attributes as OA;
-use App\Http\Resources\OmnifyBase\TeamResourceBase;
 
 #[OA\Schema(
     schema: 'Team',

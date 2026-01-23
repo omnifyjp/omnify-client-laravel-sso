@@ -1,10 +1,9 @@
 <?php
 
-namespace Omnify\SsoClient\Database\Factories;
+namespace Database\Factories;
 
-use Omnify\SsoClient\Models\BranchCache;
 use Illuminate\Database\Eloquent\Factories\Factory;
-use Illuminate\Support\Str;
+use Omnify\SsoClient\Models\BranchCache;
 
 /**
  * @extends Factory<BranchCache>
@@ -21,34 +20,12 @@ class BranchCacheFactory extends Factory
     public function definition(): array
     {
         return [
-            'console_branch_id' => (string) Str::uuid(),
-            'console_org_id' => (string) Str::uuid(),
-            'code' => strtoupper(fake()->unique()->lexify('???')),
-            'name' => fake()->company() . ' Branch',
-            'is_headquarters' => false,
-            'is_active' => true,
+            'console_branch_id' => fake()->sentence(),
+            'console_org_id' => fake()->sentence(),
+            'code' => fake()->unique()->regexify('[A-Z0-9]{8}'),
+            'name' => fake()->sentence(3),
+            'is_headquarters' => fake()->boolean(),
+            'is_active' => fake()->boolean(),
         ];
-    }
-
-    /**
-     * Create branch for specific organization.
-     */
-    public function forOrganization(string $orgId): static
-    {
-        return $this->state(fn () => [
-            'console_org_id' => $orgId,
-        ]);
-    }
-
-    /**
-     * Create headquarters branch.
-     */
-    public function headquarters(): static
-    {
-        return $this->state(fn () => [
-            'code' => 'HQ',
-            'name' => 'Headquarters',
-            'is_headquarters' => true,
-        ]);
     }
 }

@@ -230,7 +230,7 @@ class ConsoleApiService
     /**
      * Handle API error responses.
      *
-     * @param array<string, mixed>|null $body
+     * @param  array<string, mixed>|null  $body
      *
      * @throws ConsoleApiException
      */

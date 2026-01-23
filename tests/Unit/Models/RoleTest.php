@@ -5,14 +5,14 @@
  *
  * ロールモデルのユニットテスト
  * Kiểm thử đơn vị cho Model Role
- * 
+ *
  * Updated for UUID primary keys
  */
 
-use Omnify\SsoClient\Models\Role;
-use Omnify\SsoClient\Models\Permission;
-use Omnify\SsoClient\Models\User;
 use Illuminate\Support\Str;
+use Omnify\SsoClient\Models\Permission;
+use Omnify\SsoClient\Models\Role;
+use Omnify\SsoClient\Models\User;
 
 beforeEach(function () {
     $this->artisan('migrate', ['--database' => 'testing']);
@@ -51,7 +51,7 @@ test('can create role with all fields', function () {
 
 test('role id is uuid', function () {
     $role = Role::create(['name' => 'Test', 'slug' => 'test']);
-    
+
     expect($role->id)->toBeString()
         ->and(Str::isUuid($role->id))->toBeTrue();
 });
@@ -133,7 +133,7 @@ test('can sync permissions', function () {
 
     $role->permissions()->sync([$perm2->id, $perm3->id]);
     $role->refresh();
-    
+
     expect($role->permissions)->toHaveCount(2)
         ->and($role->permissions->pluck('slug')->toArray())->toContain('posts.edit', 'posts.delete')
         ->and($role->permissions->pluck('slug')->toArray())->not->toContain('posts.create');
@@ -149,22 +149,22 @@ test('can detach all permissions', function () {
 
     $role->permissions()->detach();
     $role->refresh();
-    
+
     expect($role->permissions)->toHaveCount(0);
 });
 
 test('role has many users (ManyToMany)', function () {
     $role = Role::create(['name' => 'Member', 'slug' => 'member', 'level' => 10]);
-    
+
     $user1 = User::create(['name' => 'User 1', 'email' => 'user1@test.com']);
     $user2 = User::create(['name' => 'User 2', 'email' => 'user2@test.com']);
-    
+
     $user1->roles()->attach($role->id);
     $user2->roles()->attach($role->id);
 
     $role->refresh();
-    $usersWithRole = User::whereHas('roles', fn($q) => $q->where('roles.id', $role->id))->get();
-    
+    $usersWithRole = User::whereHas('roles', fn ($q) => $q->where('roles.id', $role->id))->get();
+
     expect($usersWithRole)->toHaveCount(2);
 });
 
@@ -240,7 +240,7 @@ test('can find role by slug', function () {
     Role::create(['name' => 'Administrator', 'slug' => 'admin', 'level' => 100]);
 
     $found = Role::where('slug', 'admin')->first();
-    
+
     expect($found)->not->toBeNull()
         ->and($found->name)->toBe('Administrator');
 });
@@ -251,7 +251,7 @@ test('can order roles by level', function () {
     Role::create(['name' => 'Editor', 'slug' => 'editor', 'level' => 50]);
 
     $roles = Role::orderBy('level', 'desc')->get();
-    
+
     expect($roles->first()->slug)->toBe('admin')
         ->and($roles->last()->slug)->toBe('member');
 });
@@ -262,7 +262,7 @@ test('can filter roles by minimum level', function () {
     Role::create(['name' => 'Editor', 'slug' => 'editor', 'level' => 50]);
 
     $highLevelRoles = Role::where('level', '>=', 50)->get();
-    
+
     expect($highLevelRoles)->toHaveCount(2);
 });
 
@@ -270,7 +270,7 @@ test('can search roles with permission', function () {
     $role1 = Role::create(['name' => 'Admin', 'slug' => 'admin', 'level' => 100]);
     $role2 = Role::create(['name' => 'Editor', 'slug' => 'editor', 'level' => 50]);
     Role::create(['name' => 'Member', 'slug' => 'member', 'level' => 10]);
-    
+
     $permission = Permission::create(['name' => 'Create Posts', 'slug' => 'posts.create']);
     $role1->permissions()->attach($permission->id);
     $role2->permissions()->attach($permission->id);
@@ -278,7 +278,7 @@ test('can search roles with permission', function () {
     $rolesWithPermission = Role::whereHas('permissions', function ($query) {
         $query->where('slug', 'posts.create');
     })->get();
-    
+
     expect($rolesWithPermission)->toHaveCount(2);
 });
 
@@ -296,7 +296,7 @@ test('can update role', function () {
     ]);
 
     $role->refresh();
-    
+
     expect($role->name)->toBe('New Name')
         ->and($role->slug)->toBe('new-slug')
         ->and($role->level)->toBe(50);
@@ -307,7 +307,7 @@ test('can delete role', function () {
     $roleId = $role->id;
 
     $role->delete();
-    
+
     expect(Role::find($roleId))->toBeNull();
 });
 
@@ -329,7 +329,7 @@ test('timestamps are automatically set', function () {
 
 test('factory creates valid role', function () {
     $role = Role::factory()->create();
-    
+
     expect($role)->toBeInstanceOf(Role::class)
         ->and($role->id)->toBeString()
         ->and(Str::isUuid($role->id))->toBeTrue()

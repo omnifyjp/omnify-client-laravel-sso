@@ -17,12 +17,14 @@ use Composer\Script\ScriptEvents;
  * Scans installed packages for `extra.omnify` configuration and generates
  * `.omnify-packages.json` manifest file for the Omnify CLI to consume.
  */
-class OmnifyDiscoveryPlugin implements PluginInterface, EventSubscriberInterface
+class OmnifyDiscoveryPlugin implements EventSubscriberInterface, PluginInterface
 {
     private const MANIFEST_FILENAME = '.omnify-packages.json';
+
     private const MANIFEST_VERSION = 1;
 
     private Composer $composer;
+
     private IOInterface $io;
 
     public function activate(Composer $composer, IOInterface $io): void
@@ -40,7 +42,7 @@ class OmnifyDiscoveryPlugin implements PluginInterface, EventSubscriberInterface
     {
         // Remove manifest file from project root
         $projectRoot = $this->findProjectRoot();
-        $manifestPath = $projectRoot . '/' . self::MANIFEST_FILENAME;
+        $manifestPath = $projectRoot.'/'.self::MANIFEST_FILENAME;
         if (file_exists($manifestPath)) {
             @unlink($manifestPath);
         }
@@ -67,12 +69,13 @@ class OmnifyDiscoveryPlugin implements PluginInterface, EventSubscriberInterface
         if (empty($packages)) {
             $this->io->write('<comment>Omnify: No packages with schemas found.</comment>');
             $this->removeManifestIfExists();
+
             return;
         }
 
         // Find project root (where omnify.config.ts is located)
         $projectRoot = $this->findProjectRoot();
-        $outputPath = $projectRoot . '/' . self::MANIFEST_FILENAME;
+        $outputPath = $projectRoot.'/'.self::MANIFEST_FILENAME;
 
         $manifest = [
             '$schema' => 'https://omnify.dev/schemas/packages.json',
@@ -85,14 +88,15 @@ class OmnifyDiscoveryPlugin implements PluginInterface, EventSubscriberInterface
 
         if ($json === false) {
             $this->io->writeError('<error>Omnify: Failed to encode manifest JSON</error>');
+
             return;
         }
 
         file_put_contents($outputPath, $json);
 
-        $relativePath = $projectRoot === getcwd() 
-            ? self::MANIFEST_FILENAME 
-            : str_replace(getcwd() . '/', '', $outputPath);
+        $relativePath = $projectRoot === getcwd()
+            ? self::MANIFEST_FILENAME
+            : str_replace(getcwd().'/', '', $outputPath);
 
         $this->io->write(sprintf(
             '<info>Omnify: Found %d package(s), wrote %s</info>',
@@ -120,7 +124,7 @@ class OmnifyDiscoveryPlugin implements PluginInterface, EventSubscriberInterface
             ];
 
             foreach ($configFiles as $configFile) {
-                if (file_exists($dir . '/' . $configFile)) {
+                if (file_exists($dir.'/'.$configFile)) {
                     return $dir;
                 }
             }
@@ -145,9 +149,9 @@ class OmnifyDiscoveryPlugin implements PluginInterface, EventSubscriberInterface
     {
         $packages = [];
         $vendorDir = $this->composer->getConfig()->get('vendor-dir');
-        $installedPath = $vendorDir . '/composer/installed.json';
+        $installedPath = $vendorDir.'/composer/installed.json';
 
-        if (!file_exists($installedPath)) {
+        if (! file_exists($installedPath)) {
             return $packages;
         }
 
@@ -157,36 +161,36 @@ class OmnifyDiscoveryPlugin implements PluginInterface, EventSubscriberInterface
         }
 
         $installed = json_decode($content, true);
-        if (!is_array($installed)) {
+        if (! is_array($installed)) {
             return $packages;
         }
 
         // Handle both old and new installed.json format
         $packageList = $installed['packages'] ?? $installed;
-        if (!is_array($packageList)) {
+        if (! is_array($packageList)) {
             return $packages;
         }
 
         foreach ($packageList as $package) {
-            if (!is_array($package)) {
+            if (! is_array($package)) {
                 continue;
             }
 
             $omnifyConfig = $package['extra']['omnify'] ?? null;
-            if ($omnifyConfig === null || !is_array($omnifyConfig)) {
+            if ($omnifyConfig === null || ! is_array($omnifyConfig)) {
                 continue;
             }
 
             $packageName = $package['name'] ?? null;
-            if (!is_string($packageName)) {
+            if (! is_string($packageName)) {
                 continue;
             }
 
-            $packagePath = $vendorDir . '/' . $packageName;
+            $packagePath = $vendorDir.'/'.$packageName;
 
             // Build package configuration
             $config = [
-                'schemas' => $packagePath . '/' . ($omnifyConfig['schemas'] ?? 'database/schemas'),
+                'schemas' => $packagePath.'/'.($omnifyConfig['schemas'] ?? 'database/schemas'),
                 'namespace' => $omnifyConfig['namespace'] ?? $this->deriveNamespace($packageName),
                 'priority' => $omnifyConfig['priority'] ?? 100,
             ];
@@ -202,10 +206,10 @@ class OmnifyDiscoveryPlugin implements PluginInterface, EventSubscriberInterface
 
                 // Resolve relative paths
                 if (isset($options['migrationsPath']) && is_string($options['migrationsPath'])) {
-                    $options['migrationsPath'] = $packagePath . '/' . $options['migrationsPath'];
+                    $options['migrationsPath'] = $packagePath.'/'.$options['migrationsPath'];
                 }
                 if (isset($options['factoriesPath']) && is_string($options['factoriesPath'])) {
-                    $options['factoriesPath'] = $packagePath . '/' . $options['factoriesPath'];
+                    $options['factoriesPath'] = $packagePath.'/'.$options['factoriesPath'];
                 }
 
                 $config['options'] = $options;
@@ -229,6 +233,7 @@ class OmnifyDiscoveryPlugin implements PluginInterface, EventSubscriberInterface
     private function deriveNamespace(string $packageName): string
     {
         $parts = preg_split('/[-_\/]/', $packageName) ?: [$packageName];
+
         return implode('', array_map('ucfirst', $parts));
     }
 
@@ -238,7 +243,7 @@ class OmnifyDiscoveryPlugin implements PluginInterface, EventSubscriberInterface
     private function removeManifestIfExists(): void
     {
         $projectRoot = $this->findProjectRoot();
-        $manifestPath = $projectRoot . '/' . self::MANIFEST_FILENAME;
+        $manifestPath = $projectRoot.'/'.self::MANIFEST_FILENAME;
         if (file_exists($manifestPath)) {
             @unlink($manifestPath);
         }

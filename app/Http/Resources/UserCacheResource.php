@@ -8,9 +8,9 @@
 
 namespace App\Http\Resources;
 
+use App\Http\Resources\OmnifyBase\UserCacheResourceBase;
 use Illuminate\Http\Request;
 use OpenApi\Attributes as OA;
-use App\Http\Resources\OmnifyBase\UserCacheResourceBase;
 
 #[OA\Schema(
     schema: 'UserCache',

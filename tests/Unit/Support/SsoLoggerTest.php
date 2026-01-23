@@ -22,7 +22,7 @@ describe('SsoLogger', function () {
                     && $context['success'] === true;
             });
 
-        $logger = new SsoLogger();
+        $logger = new SsoLogger;
         $logger->authAttempt('user@example.com', true);
     });
 
@@ -37,7 +37,7 @@ describe('SsoLogger', function () {
                     && $context['reason'] === 'Invalid credentials';
             });
 
-        $logger = new SsoLogger();
+        $logger = new SsoLogger;
         $logger->authAttempt('user@example.com', false, 'Invalid credentials');
     });
 
@@ -53,7 +53,7 @@ describe('SsoLogger', function () {
                     && ! str_contains($context['email'], 'test@');
             });
 
-        $logger = new SsoLogger();
+        $logger = new SsoLogger;
         $logger->authAttempt('test@example.com', true);
     });
 
@@ -66,7 +66,7 @@ describe('SsoLogger', function () {
                 return str_contains($message, '[SSO] Code exchange successful');
             });
 
-        $logger = new SsoLogger();
+        $logger = new SsoLogger;
         $logger->codeExchange(true);
     });
 
@@ -80,7 +80,7 @@ describe('SsoLogger', function () {
                     && $context['error'] === 'Expired code';
             });
 
-        $logger = new SsoLogger();
+        $logger = new SsoLogger;
         $logger->codeExchange(false, 'Expired code');
     });
 
@@ -93,7 +93,7 @@ describe('SsoLogger', function () {
                 return str_contains($message, '[SSO] JWT verification successful');
             });
 
-        $logger = new SsoLogger();
+        $logger = new SsoLogger;
         $logger->jwtVerification(true);
     });
 
@@ -107,7 +107,7 @@ describe('SsoLogger', function () {
                     && isset($context['ip']);
             });
 
-        $logger = new SsoLogger();
+        $logger = new SsoLogger;
         $logger->securityEvent('blocked_redirect', ['url' => 'https://evil.com']);
     });
 
@@ -121,7 +121,7 @@ describe('SsoLogger', function () {
                     && $context['user_id'] === 123;
             });
 
-        $logger = new SsoLogger();
+        $logger = new SsoLogger;
         $logger->logout(123);
     });
 
@@ -136,7 +136,7 @@ describe('SsoLogger', function () {
                     && $context['status_code'] === 500;
             });
 
-        $logger = new SsoLogger();
+        $logger = new SsoLogger;
         $logger->apiError('/api/token', 500, 'Internal server error');
     });
 
@@ -148,7 +148,7 @@ describe('SsoLogger', function () {
         Log::shouldReceive('info')
             ->never();
 
-        $logger = new SsoLogger();
+        $logger = new SsoLogger;
         $logger->authAttempt('user@example.com', true);
     });
 
@@ -164,7 +164,7 @@ describe('SsoLogger', function () {
                     && $context['deleted'] === 1;
             });
 
-        $logger = new SsoLogger();
+        $logger = new SsoLogger;
         $logger->permissionSync(5, 3, 1);
     });
 
@@ -178,7 +178,7 @@ describe('SsoLogger', function () {
                     && $context['user_id'] === 123;
             });
 
-        $logger = new SsoLogger();
+        $logger = new SsoLogger;
         $logger->tokenRefresh(123, true);
     });
 });

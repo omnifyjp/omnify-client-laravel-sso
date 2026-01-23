@@ -1,5 +1,5 @@
 version: 1
-timestamp: "2026-01-22T02:03:31.488Z"
+timestamp: "2026-01-23T05:55:36.504Z"
 driver: mysql
 migration: 9 migration(s)
 description: Generated 8 change(s)

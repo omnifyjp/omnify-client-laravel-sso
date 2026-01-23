@@ -8,9 +8,9 @@
 
 namespace App\Http\Resources;
 
+use App\Http\Resources\OmnifyBase\TeamPermissionResourceBase;
 use Illuminate\Http\Request;
 use OpenApi\Attributes as OA;
-use App\Http\Resources\OmnifyBase\TeamPermissionResourceBase;
 
 #[OA\Schema(
     schema: 'TeamPermission',

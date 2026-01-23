@@ -4,6 +4,7 @@ use Illuminate\Support\Facades\Route;
 use Omnify\SsoClient\Http\Controllers\Admin\PermissionAdminController;
 use Omnify\SsoClient\Http\Controllers\Admin\RoleAdminController;
 use Omnify\SsoClient\Http\Controllers\Admin\TeamPermissionAdminController;
+use Omnify\SsoClient\Http\Controllers\Admin\UserAdminController;
 use Omnify\SsoClient\Http\Controllers\Admin\UserRoleAdminController;
 use Omnify\SsoClient\Http\Controllers\SsoBranchController;
 use Omnify\SsoClient\Http\Controllers\SsoCallbackController;
@@ -63,6 +64,10 @@ Route::prefix($prefix)
 Route::prefix($adminPrefix)
     ->middleware($adminMiddleware)
     ->group(function () {
+        // Users
+        Route::get('users/search', [UserAdminController::class, 'search']);
+        Route::apiResource('users', UserAdminController::class)->except(['store']);
+
         // Roles
         Route::apiResource('roles', RoleAdminController::class);
         Route::get('roles/{role}/permissions', [RoleAdminController::class, 'permissions']);

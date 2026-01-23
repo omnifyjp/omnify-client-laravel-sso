@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace Omnify\SsoClient\Console\Commands;
 
 use Illuminate\Console\Command;
-use Omnify\SsoClient\Cache\TeamPermissionCache;
 use Omnify\SsoClient\Models\TeamPermission;
 
 class SsoCleanupOrphanTeamsCommand extends Command

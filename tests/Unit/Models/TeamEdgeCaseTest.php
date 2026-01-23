@@ -7,10 +7,10 @@
  * Kiểm thử các trường hợp biên cho Model Team
  */
 
-use Omnify\SsoClient\Models\Team;
-use Omnify\SsoClient\Models\Permission;
-use Omnify\SsoClient\Models\TeamPermission;
 use Illuminate\Support\Str;
+use Omnify\SsoClient\Models\Permission;
+use Omnify\SsoClient\Models\Team;
+use Omnify\SsoClient\Models\TeamPermission;
 
 beforeEach(function () {
     $this->artisan('migrate', ['--database' => 'testing']);

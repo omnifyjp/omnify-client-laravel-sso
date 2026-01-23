@@ -2,8 +2,8 @@
 
 namespace Omnify\SsoClient\Models;
 
-use Omnify\SsoClient\Models\OmnifyBase\PermissionBaseModel;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Omnify\SsoClient\Models\OmnifyBase\PermissionBaseModel;
 
 /**
  * Permission Model

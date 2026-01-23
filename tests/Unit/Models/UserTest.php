@@ -5,15 +5,15 @@
  *
  * ユーザーモデルのユニットテスト
  * Kiểm thử đơn vị cho Model User
- * 
+ *
  * Updated for UUID primary keys and ManyToMany roles
  */
 
-use Omnify\SsoClient\Models\UserCache as User;
-use Omnify\SsoClient\Models\Role;
-use Illuminate\Contracts\Auth\Authenticatable as AuthenticatableContract;
 use Illuminate\Contracts\Auth\Access\Authorizable as AuthorizableContract;
+use Illuminate\Contracts\Auth\Authenticatable as AuthenticatableContract;
 use Illuminate\Support\Str;
+use Omnify\SsoClient\Models\Role;
+use Omnify\SsoClient\Models\UserCache as User;
 
 beforeEach(function () {
     $this->artisan('migrate', ['--database' => 'testing']);
@@ -38,7 +38,7 @@ test('can create user with required fields', function () {
 
 test('can create user with all fields', function () {
     $consoleUserId = (string) Str::uuid();
-    
+
     $user = User::create([
         'name' => 'Full User',
         'email' => 'full@example.com',
@@ -80,20 +80,20 @@ test('user id is uuid', function () {
 // =============================================================================
 
 test('user implements authenticatable contract', function () {
-    $user = new User();
-    
+    $user = new User;
+
     expect($user)->toBeInstanceOf(AuthenticatableContract::class);
 });
 
 test('user implements authorizable contract', function () {
-    $user = new User();
-    
+    $user = new User;
+
     expect($user)->toBeInstanceOf(AuthorizableContract::class);
 });
 
 test('getAuthIdentifierName returns id', function () {
-    $user = new User();
-    
+    $user = new User;
+
     expect($user->getAuthIdentifierName())->toBe('id');
 });
 
@@ -120,7 +120,7 @@ test('console tokens are hidden in array', function () {
     ]);
 
     $array = $user->toArray();
-    
+
     expect($array)->not->toHaveKey('console_access_token')
         ->and($array)->not->toHaveKey('console_refresh_token');
 });
@@ -146,12 +146,12 @@ test('console_token_expires_at is cast to datetime', function () {
 test('user has many roles (ManyToMany)', function () {
     $role1 = Role::create(['name' => 'Admin', 'slug' => 'admin', 'level' => 100]);
     $role2 = Role::create(['name' => 'Editor', 'slug' => 'editor', 'level' => 50]);
-    
+
     $user = User::create([
         'name' => 'Test User',
         'email' => 'test@example.com',
     ]);
-    
+
     $user->roles()->attach([$role1->id, $role2->id]);
 
     expect($user->roles)->toHaveCount(2)
@@ -171,19 +171,19 @@ test('user can sync roles', function () {
     $role1 = Role::create(['name' => 'Member', 'slug' => 'member', 'level' => 10]);
     $role2 = Role::create(['name' => 'Admin', 'slug' => 'admin', 'level' => 100]);
     $role3 = Role::create(['name' => 'Editor', 'slug' => 'editor', 'level' => 50]);
-    
+
     $user = User::create([
         'name' => 'Test User',
         'email' => 'test@example.com',
     ]);
-    
+
     $user->roles()->attach([$role1->id, $role2->id]);
     expect($user->roles)->toHaveCount(2);
-    
+
     // Sync to different roles
     $user->roles()->sync([$role2->id, $role3->id]);
     $user->refresh();
-    
+
     expect($user->roles)->toHaveCount(2)
         ->and($user->roles->pluck('slug')->toArray())->toContain('admin', 'editor')
         ->and($user->roles->pluck('slug')->toArray())->not->toContain('member');
@@ -191,18 +191,18 @@ test('user can sync roles', function () {
 
 test('user can detach all roles', function () {
     $role = Role::create(['name' => 'Admin', 'slug' => 'admin', 'level' => 100]);
-    
+
     $user = User::create([
         'name' => 'Test User',
         'email' => 'test@example.com',
     ]);
-    
+
     $user->roles()->attach($role->id);
     expect($user->roles)->toHaveCount(1);
-    
+
     $user->roles()->detach();
     $user->refresh();
-    
+
     expect($user->roles)->toHaveCount(0);
 });
 
@@ -213,7 +213,7 @@ test('user can detach all roles', function () {
 test('can store console sso fields', function () {
     $consoleUserId = (string) Str::uuid();
     $expiresAt = now()->addHour();
-    
+
     $user = User::create([
         'name' => 'SSO User',
         'email' => 'sso@example.com',
@@ -255,14 +255,14 @@ test('can update console tokens', function () {
     ]);
 
     $user->refresh();
-    
+
     expect($user->console_access_token)->toBe('new_token')
         ->and($user->console_refresh_token)->toBe('new_refresh');
 });
 
 test('console_user_id must be unique', function () {
     $consoleUserId = (string) Str::uuid();
-    
+
     User::create([
         'name' => 'User 1',
         'email' => 'user1@example.com',
@@ -287,14 +287,14 @@ test('can find user by email', function () {
     ]);
 
     $found = User::where('email', 'findme@example.com')->first();
-    
+
     expect($found)->not->toBeNull()
         ->and($found->name)->toBe('Test User');
 });
 
 test('can find user by console_user_id (uuid)', function () {
     $consoleUserId = (string) Str::uuid();
-    
+
     User::create([
         'name' => 'Console User',
         'email' => 'console@example.com',
@@ -302,7 +302,7 @@ test('can find user by console_user_id (uuid)', function () {
     ]);
 
     $found = User::where('console_user_id', $consoleUserId)->first();
-    
+
     expect($found)->not->toBeNull()
         ->and($found->email)->toBe('console@example.com');
 });
@@ -310,17 +310,17 @@ test('can find user by console_user_id (uuid)', function () {
 test('can filter users by role', function () {
     $adminRole = Role::create(['name' => 'Admin', 'slug' => 'admin', 'level' => 100]);
     $memberRole = Role::create(['name' => 'Member', 'slug' => 'member', 'level' => 10]);
-    
+
     $admin1 = User::create(['name' => 'Admin 1', 'email' => 'admin1@example.com']);
     $admin2 = User::create(['name' => 'Admin 2', 'email' => 'admin2@example.com']);
     $member = User::create(['name' => 'Member 1', 'email' => 'member1@example.com']);
-    
+
     $admin1->roles()->attach($adminRole->id);
     $admin2->roles()->attach($adminRole->id);
     $member->roles()->attach($memberRole->id);
 
-    $admins = User::whereHas('roles', fn($q) => $q->where('slug', 'admin'))->get();
-    
+    $admins = User::whereHas('roles', fn ($q) => $q->where('slug', 'admin'))->get();
+
     expect($admins)->toHaveCount(2);
 });
 
@@ -344,14 +344,14 @@ test('updated_at changes on update', function () {
         'name' => 'Test User',
         'email' => 'test@example.com',
     ]);
-    
+
     $originalUpdatedAt = $user->updated_at;
-    
+
     // Wait a moment to ensure timestamp difference
     usleep(100000); // 0.1 second
-    
+
     $user->update(['name' => 'Updated Name']);
-    
+
     expect($user->updated_at->gte($originalUpdatedAt))->toBeTrue();
 });
 
@@ -361,7 +361,7 @@ test('updated_at changes on update', function () {
 
 test('factory creates valid user', function () {
     $user = User::factory()->create();
-    
+
     expect($user)->toBeInstanceOf(User::class)
         ->and($user->id)->toBeString()
         ->and(Str::isUuid($user->id))->toBeTrue()
@@ -371,7 +371,7 @@ test('factory creates valid user', function () {
 
 test('factory withoutTokens creates user without tokens', function () {
     $user = User::factory()->withoutTokens()->create();
-    
+
     expect($user->console_access_token)->toBeNull()
         ->and($user->console_refresh_token)->toBeNull()
         ->and($user->console_token_expires_at)->toBeNull();
@@ -379,7 +379,7 @@ test('factory withoutTokens creates user without tokens', function () {
 
 test('factory withExpiredTokens creates user with expired tokens', function () {
     $user = User::factory()->withExpiredTokens()->create();
-    
+
     expect($user->console_token_expires_at)->not->toBeNull()
         ->and($user->console_token_expires_at->isPast())->toBeTrue();
 });

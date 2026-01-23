@@ -1,10 +1,9 @@
 <?php
 
-namespace Omnify\SsoClient\Database\Factories;
+namespace Database\Factories;
 
-use Omnify\SsoClient\Models\Role;
 use Illuminate\Database\Eloquent\Factories\Factory;
-
+use Omnify\SsoClient\Models\Role;
 
 /**
  * @extends Factory<Role>

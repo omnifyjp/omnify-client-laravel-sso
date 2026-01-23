@@ -141,7 +141,6 @@ trait HasTeamPermissions
      * @param  string  $permission  Permission slug to check
      * @param  string|null  $orgId  Organization context
      * @param  string|null  $branchId  Branch context (NEW!)
-     * @return bool
      *
      * @example
      * // Check with current context (from session)

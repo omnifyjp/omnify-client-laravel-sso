@@ -74,7 +74,7 @@ class SsoClientServiceProvider extends ServiceProvider
 
         // Register SSO Logger
         $this->app->singleton(SsoLogger::class, function ($app) {
-            return new SsoLogger();
+            return new SsoLogger;
         });
 
         // Register helper function
@@ -137,13 +137,13 @@ class SsoClientServiceProvider extends ServiceProvider
         ]);
 
         // Backward compatibility aliases (only if classes don't exist)
-        if (!class_exists(\Omnify\SsoClient\Models\Branch::class)) {
+        if (! class_exists(\Omnify\SsoClient\Models\Branch::class)) {
             class_alias(\Omnify\SsoClient\Models\BranchCache::class, \Omnify\SsoClient\Models\Branch::class);
         }
-        if (!class_exists(\Omnify\SsoClient\Models\User::class)) {
+        if (! class_exists(\Omnify\SsoClient\Models\User::class)) {
             class_alias(\Omnify\SsoClient\Models\UserCache::class, \Omnify\SsoClient\Models\User::class);
         }
-        if (!class_exists(\Omnify\SsoClient\Models\Team::class)) {
+        if (! class_exists(\Omnify\SsoClient\Models\Team::class)) {
             class_alias(\Omnify\SsoClient\Models\TeamCache::class, \Omnify\SsoClient\Models\Team::class);
         }
     }
@@ -252,5 +252,4 @@ class SsoClientServiceProvider extends ServiceProvider
             }
         });
     }
-
 }

@@ -1,6 +1,6 @@
 {
   "version": 2,
-  "updatedAt": "2026-01-22T02:03:31.487Z",
+  "updatedAt": "2026-01-23T05:55:36.502Z",
   "driver": "mysql",
   "schemas": {
     "BranchCache": {
@@ -8,7 +8,7 @@
       "kind": "object",
       "hash": "65020f2149799983b005ed5ba702be0668261cbf73647a04797f316275c32478",
       "relativePath": "Sso/BranchCache.yaml",
-      "modifiedAt": "2026-01-22T01:59:53.447Z",
+      "modifiedAt": "2026-01-23T04:59:59.975Z",
       "properties": {
         "console_branch_id": {
           "type": "Uuid",
@@ -72,7 +72,7 @@
       "kind": "object",
       "hash": "c6c6135491e5e6e230a71128e0eb40afb65e5ee9eaa98c8fda81ddfbbd53d58a",
       "relativePath": "Sso/OrganizationCache.yaml",
-      "modifiedAt": "2026-01-22T01:59:57.491Z",
+      "modifiedAt": "2026-01-23T04:59:59.954Z",
       "properties": {
         "console_org_id": {
           "type": "Uuid",
@@ -108,7 +108,7 @@
       "kind": "object",
       "hash": "2a2c4bf6d98122f87cf1a0ef1ff352bcab6958ee085fdfc96aeff68bfb80bda9",
       "relativePath": "Sso/Permission.yaml",
-      "modifiedAt": "2026-01-19T10:47:01.147Z",
+      "modifiedAt": "2026-01-23T04:59:59.974Z",
       "properties": {
         "name": {
           "type": "String",
@@ -140,7 +140,7 @@
       "kind": "object",
       "hash": "7e4828017d3ec814a5515b133eb26a432fed2e17686923d15bc14207060f50f9",
       "relativePath": "Sso/Role.yaml",
-      "modifiedAt": "2026-01-19T10:46:44.614Z",
+      "modifiedAt": "2026-01-23T04:59:59.954Z",
       "properties": {
         "name": {
           "type": "String",
@@ -175,7 +175,7 @@
       "kind": "object",
       "hash": "3612d5985a35975511f239b3b966fd1a94afaaf7fbba3fc7de64f5335ded1f1c",
       "relativePath": "Sso/RolePermission.yaml",
-      "modifiedAt": "2026-01-19T16:05:35.201Z",
+      "modifiedAt": "2026-01-23T04:59:59.974Z",
       "properties": {
         "role": {
           "type": "Association",
@@ -202,7 +202,7 @@
       "kind": "object",
       "hash": "810e4f127bc7a94b0dff97f63fa5bf75df13ab69af42b066e6e65501e0a9075d",
       "relativePath": "Sso/TeamCache.yaml",
-      "modifiedAt": "2026-01-22T01:59:56.259Z",
+      "modifiedAt": "2026-01-23T04:59:59.964Z",
       "properties": {
         "console_team_id": {
           "type": "Uuid",
@@ -233,7 +233,7 @@
       "kind": "object",
       "hash": "bda165f9694ae91dc1e968035a376bd6f2e11699ea8a81acefe3a9e785947edb",
       "relativePath": "Sso/TeamPermission.yaml",
-      "modifiedAt": "2026-01-19T10:46:49.235Z",
+      "modifiedAt": "2026-01-23T04:59:59.975Z",
       "properties": {
         "console_org_id": {
           "type": "Uuid"
@@ -265,7 +265,7 @@
       "kind": "object",
       "hash": "02e694d379adbd51616eca28e54ce728acbddcedd77b84bcdad0ce8b48fa694b",
       "relativePath": "Sso/UserCache.yaml",
-      "modifiedAt": "2026-01-22T01:59:55.017Z",
+      "modifiedAt": "2026-01-23T04:59:59.976Z",
       "properties": {
         "name": {
           "type": "String"
@@ -334,5 +334,112 @@
       "timestamps": true
     }
   },
-  "migrations": []
+  "migrations": [
+    {
+      "fileName": "2026_01_23_145536_create_branch_caches_table.php",
+      "timestamp": "2026_01_23_145536",
+      "tableName": "branch_caches",
+      "type": "create",
+      "generatedAt": "2026-01-23T05:55:36.502Z",
+      "schemas": [
+        "BranchCache"
+      ],
+      "checksum": "de4633d7dc984b300d48bc0a7472bdcd8dd13c7335ac8dbd9d8812e1302d0e0c",
+      "outputPath": "./database/migrations/omnify"
+    },
+    {
+      "fileName": "2026_01_23_145537_create_organization_caches_table.php",
+      "timestamp": "2026_01_23_145537",
+      "tableName": "organization_caches",
+      "type": "create",
+      "generatedAt": "2026-01-23T05:55:36.502Z",
+      "schemas": [
+        "OrganizationCache"
+      ],
+      "checksum": "1e1585754821389ae951c26eb5b016c0e4117b88e5473afc063f4799d2c75971",
+      "outputPath": "./database/migrations/omnify"
+    },
+    {
+      "fileName": "2026_01_23_145538_create_permissions_table.php",
+      "timestamp": "2026_01_23_145538",
+      "tableName": "permissions",
+      "type": "create",
+      "generatedAt": "2026-01-23T05:55:36.502Z",
+      "schemas": [
+        "Permission"
+      ],
+      "checksum": "201092595b59d0aa63521af15e58321c0bfca69ae8f6d256f45d3833863cc020",
+      "outputPath": "./database/migrations/omnify"
+    },
+    {
+      "fileName": "2026_01_23_145539_create_roles_table.php",
+      "timestamp": "2026_01_23_145539",
+      "tableName": "roles",
+      "type": "create",
+      "generatedAt": "2026-01-23T05:55:36.502Z",
+      "schemas": [
+        "Role"
+      ],
+      "checksum": "39a3efde05e12fa0d115cc667c2e9531df5a67f2cd81e25bad717250a11789eb",
+      "outputPath": "./database/migrations/omnify"
+    },
+    {
+      "fileName": "2026_01_23_145540_create_role_permissions_table.php",
+      "timestamp": "2026_01_23_145540",
+      "tableName": "role_permissions",
+      "type": "create",
+      "generatedAt": "2026-01-23T05:55:36.502Z",
+      "schemas": [
+        "RolePermission"
+      ],
+      "checksum": "3de1cfaf507c404695869319520810a9a04e0500fb08e8ff3eae1319ecfc52b9",
+      "outputPath": "./database/migrations/omnify"
+    },
+    {
+      "fileName": "2026_01_23_145541_create_team_caches_table.php",
+      "timestamp": "2026_01_23_145541",
+      "tableName": "team_caches",
+      "type": "create",
+      "generatedAt": "2026-01-23T05:55:36.502Z",
+      "schemas": [
+        "TeamCache"
+      ],
+      "checksum": "cb62e83d3188cf2788c4721d5c60650551cd45e47e93450e8126aee368f40fd5",
+      "outputPath": "./database/migrations/omnify"
+    },
+    {
+      "fileName": "2026_01_23_145542_create_team_permissions_table.php",
+      "timestamp": "2026_01_23_145542",
+      "tableName": "team_permissions",
+      "type": "create",
+      "generatedAt": "2026-01-23T05:55:36.502Z",
+      "schemas": [
+        "TeamPermission"
+      ],
+      "checksum": "731bdaa2022b2f4b4c62602babbf810e263ca51cdfeb8b0866ea4ecdf71675fb",
+      "outputPath": "./database/migrations/omnify"
+    },
+    {
+      "fileName": "2026_01_23_145543_create_user_caches_table.php",
+      "timestamp": "2026_01_23_145543",
+      "tableName": "user_caches",
+      "type": "create",
+      "generatedAt": "2026-01-23T05:55:36.502Z",
+      "schemas": [
+        "UserCache"
+      ],
+      "checksum": "d63a295a594d54e24405403ea5048ac307c478be0abe2557e6343c8edc22cff2",
+      "outputPath": "./database/migrations/omnify"
+    },
+    {
+      "fileName": "2026_01_23_145544_create_role_user_cache_table.php",
+      "timestamp": "2026_01_23_145544",
+      "tableName": "role_user_cache",
+      "type": "create",
+      "generatedAt": "2026-01-23T05:55:36.502Z",
+      "schemas": [],
+      "checksum": "0cf296bffec4dc2ab79b301de356c1acdda3f1b4e2b7a70c83144f505d8d82de",
+      "outputPath": "./database/migrations/omnify"
+    }
+  ]
 }

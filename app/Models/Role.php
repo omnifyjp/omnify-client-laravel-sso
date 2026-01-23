@@ -2,8 +2,8 @@
 
 namespace Omnify\SsoClient\Models;
 
-use Omnify\SsoClient\Models\OmnifyBase\RoleBaseModel;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Omnify\SsoClient\Models\OmnifyBase\RoleBaseModel;
 
 /**
  * Role Model

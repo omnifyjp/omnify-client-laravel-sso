@@ -102,7 +102,7 @@ test('can sync roles', function () {
 
     $permission->roles()->sync([$role2->id, $role3->id]);
     $permission->refresh();
-    
+
     expect($permission->roles)->toHaveCount(2)
         ->and($permission->roles->pluck('slug')->toArray())->toContain('editor', 'author')
         ->and($permission->roles->pluck('slug')->toArray())->not->toContain('admin');
@@ -118,7 +118,7 @@ test('can detach all roles', function () {
 
     $permission->roles()->detach();
     $permission->refresh();
-    
+
     expect($permission->roles)->toHaveCount(0);
 });
 
@@ -130,7 +130,7 @@ test('can find permission by slug', function () {
     Permission::create(['name' => 'Create Posts', 'slug' => 'posts.create', 'group' => 'posts']);
 
     $found = Permission::where('slug', 'posts.create')->first();
-    
+
     expect($found)->not->toBeNull()
         ->and($found->name)->toBe('Create Posts');
 });
@@ -268,7 +268,7 @@ test('can update permission', function () {
     ]);
 
     $permission->refresh();
-    
+
     expect($permission->name)->toBe('New Name')
         ->and($permission->slug)->toBe('new.slug')
         ->and($permission->group)->toBe('new');
@@ -279,7 +279,7 @@ test('can delete permission', function () {
     $permissionId = $permission->id;
 
     $permission->delete();
-    
+
     expect(Permission::find($permissionId))->toBeNull();
 });
 
@@ -287,9 +287,9 @@ test('deleting permission does not auto-cascade to pivot table', function () {
     $permission = Permission::create(['name' => 'Test', 'slug' => 'test']);
     $role = Role::create(['name' => 'Admin', 'slug' => 'admin', 'level' => 100]);
     $permission->roles()->attach($role->id);
-    
+
     $permissionId = $permission->id;
-    
+
     // Manually detach before delete if needed
     $permission->roles()->detach();
     $permission->delete();
@@ -314,11 +314,11 @@ test('timestamps are automatically set', function () {
 test('updated_at changes on update', function () {
     $permission = Permission::create(['name' => 'Test', 'slug' => 'test']);
     $originalUpdatedAt = $permission->updated_at;
-    
+
     usleep(100000); // 0.1 second
-    
+
     $permission->update(['name' => 'Updated']);
-    
+
     expect($permission->updated_at->gte($originalUpdatedAt))->toBeTrue();
 });
 
@@ -350,7 +350,7 @@ test('can upsert permissions', function () {
     );
 
     expect(Permission::count())->toBe(2);
-    
+
     $existing = Permission::where('slug', 'existing')->first();
     expect($existing->group)->toBe('new');
 });

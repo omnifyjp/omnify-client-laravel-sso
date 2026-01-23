@@ -8,9 +8,9 @@
 
 namespace App\Http\Resources;
 
+use App\Http\Resources\OmnifyBase\BranchResourceBase;
 use Illuminate\Http\Request;
 use OpenApi\Attributes as OA;
-use App\Http\Resources\OmnifyBase\BranchResourceBase;
 
 #[OA\Schema(
     schema: 'Branch',

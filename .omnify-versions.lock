@@ -1,0 +1,12 @@
+{
+  "version": 1,
+  "cliVersion": "unknown",
+  "plugins": [
+    {
+      "name": "@famgia/omnify-laravel",
+      "version": "2.0.17",
+      "updatedAt": "2026-01-23T05:54:53.872Z"
+    }
+  ],
+  "updatedAt": "2026-01-23T05:55:36.511Z"
+}

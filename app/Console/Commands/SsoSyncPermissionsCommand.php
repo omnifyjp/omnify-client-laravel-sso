@@ -250,7 +250,7 @@ class SsoSyncPermissionsCommand extends Command
 
             if (! empty($newIds)) {
                 $role->permissions()->attach($newIds);
-                $this->line("  {$role->slug}: Added " . count($newIds) . ' permission(s)');
+                $this->line("  {$role->slug}: Added ".count($newIds).' permission(s)');
             } else {
                 $this->line("  {$role->slug}: No new permissions to add");
             }

@@ -27,7 +27,7 @@ class SsoClientServiceProvider extends ServiceProvider
     public function boot(): void
     {
         // Load migrations from package
-        $this->loadMigrationsFrom(__DIR__ . '/../../database/migrations');
+        $this->loadMigrationsFrom(__DIR__.'/../../database/migrations');
 
         // Enforce morph map for this package's models
         Relation::enforceMorphMap([
@@ -45,13 +45,13 @@ class SsoClientServiceProvider extends ServiceProvider
         ]);
 
         // Backward compatibility aliases (only if classes don't exist)
-        if (!class_exists(\Omnify\SsoClient\Models\Branch::class)) {
+        if (! class_exists(\Omnify\SsoClient\Models\Branch::class)) {
             class_alias(\Omnify\SsoClient\Models\BranchCache::class, \Omnify\SsoClient\Models\Branch::class);
         }
-        if (!class_exists(\Omnify\SsoClient\Models\User::class)) {
+        if (! class_exists(\Omnify\SsoClient\Models\User::class)) {
             class_alias(\Omnify\SsoClient\Models\UserCache::class, \Omnify\SsoClient\Models\User::class);
         }
-        if (!class_exists(\Omnify\SsoClient\Models\Team::class)) {
+        if (! class_exists(\Omnify\SsoClient\Models\Team::class)) {
             class_alias(\Omnify\SsoClient\Models\TeamCache::class, \Omnify\SsoClient\Models\Team::class);
         }
     }

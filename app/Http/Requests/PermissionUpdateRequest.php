@@ -8,8 +8,8 @@
 
 namespace App\Http\Requests;
 
-use OpenApi\Attributes as OA;
 use App\Http\Requests\OmnifyBase\PermissionUpdateRequestBase;
+use OpenApi\Attributes as OA;
 
 #[OA\Schema(
     schema: 'PermissionUpdateRequest',

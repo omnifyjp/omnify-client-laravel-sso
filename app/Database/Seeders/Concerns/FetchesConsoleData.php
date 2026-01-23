@@ -7,26 +7,26 @@ use Illuminate\Support\Facades\Http;
 
 /**
  * Trait for fetching organization and branch data from SSO Console.
- * 
+ *
  * This trait provides methods to dynamically fetch org/branch IDs from the SSO Console,
  * which is useful in seeders that need to create scoped role assignments without
  * hardcoding UUIDs that may change between environments.
- * 
+ *
  * Features:
  * - API fallback: Tries Console API first, falls back to direct database query
  * - Auto-discovery: Tries common database names (auth_omnify, etc.)
  * - Configurable: Set SSO_CONSOLE_DATABASE env var for custom database name
- * 
+ *
  * @example
  * ```php
  * class MySeeder extends Seeder
  * {
  *     use FetchesConsoleData;
- * 
+ *
  *     public function run(): void
  *     {
  *         $orgData = $this->fetchOrgDataFromConsole('company-abc');
- *         
+ *
  *         if ($orgData) {
  *             $orgId = $orgData['org_id'];
  *             $branches = $orgData['branches']; // ['HQ' => 'uuid', 'TOKYO' => 'uuid']
@@ -34,7 +34,7 @@ use Illuminate\Support\Facades\Http;
  *     }
  * }
  * ```
- * 
+ *
  * @see \Omnify\SsoClient\Database\Seeders\Concerns\AssignsRoles
  * @see \Omnify\SsoClient\Database\Seeders\SsoRolesSeeder
  */
@@ -42,18 +42,19 @@ trait FetchesConsoleData
 {
     /**
      * Fetch organization and branch data from SSO Console.
-     * 
+     *
      * Tries Console API first, falls back to direct database query.
-     * 
-     * @param string $orgSlug Organization slug (e.g., 'company-abc')
+     *
+     * @param  string  $orgSlug  Organization slug (e.g., 'company-abc')
      * @return array|null ['org_id' => string, 'org_name' => string, 'branches' => array]
      */
     protected function fetchOrgDataFromConsole(string $orgSlug): ?array
     {
         $consoleUrl = config('sso-client.console.url');
-        
-        if (!$consoleUrl) {
+
+        if (! $consoleUrl) {
             $this->logWarning('SSO Console URL not configured');
+
             return $this->fetchOrgDataFromConsoleDb($orgSlug);
         }
 
@@ -64,23 +65,24 @@ trait FetchesConsoleData
 
             if ($response->successful()) {
                 $data = $response->json();
+
                 return [
                     'org_id' => $data['id'] ?? null,
                     'org_name' => $data['name'] ?? $orgSlug,
-                    'branches' => collect($data['branches'] ?? [])->mapWithKeys(fn($b) => [
-                        $b['code'] => $b['id']
+                    'branches' => collect($data['branches'] ?? [])->mapWithKeys(fn ($b) => [
+                        $b['code'] => $b['id'],
                     ])->toArray(),
                 ];
             }
 
             $this->logWarning("Console API returned: {$response->status()} - trying database fallback");
-            
+
             // Fallback: Try to connect to Console's database directly
             return $this->fetchOrgDataFromConsoleDb($orgSlug);
 
         } catch (\Exception $e) {
             $this->logWarning("Could not connect to Console: {$e->getMessage()}");
-            
+
             // Try database fallback
             return $this->fetchOrgDataFromConsoleDb($orgSlug);
         }
@@ -111,20 +113,20 @@ trait FetchesConsoleData
                         [$orgSlug]
                     );
 
-                    if (!empty($org)) {
+                    if (! empty($org)) {
                         $org = $org[0];
-                        
+
                         $branches = DB::select(
                             "SELECT id, code, name FROM {$consoleDb}.branches WHERE organization_id = ?",
                             [$org->id]
                         );
 
                         $this->logInfo("Found org data in database: {$consoleDb}");
-                        
+
                         return [
                             'org_id' => $org->id,
                             'org_name' => $org->name,
-                            'branches' => collect($branches)->mapWithKeys(fn($b) => [$b->code => $b->id])->toArray(),
+                            'branches' => collect($branches)->mapWithKeys(fn ($b) => [$b->code => $b->id])->toArray(),
                         ];
                     }
                 } catch (\Exception $e) {
@@ -137,6 +139,7 @@ trait FetchesConsoleData
 
         } catch (\Exception $e) {
             $this->logWarning("Could not access Console database: {$e->getMessage()}");
+
             return null;
         }
     }

@@ -7,8 +7,8 @@
  * Kiểm thử các trường hợp biên cho Model Role
  */
 
-use Omnify\SsoClient\Models\Role;
 use Omnify\SsoClient\Models\Permission;
+use Omnify\SsoClient\Models\Role;
 use Omnify\SsoClient\Models\User;
 
 beforeEach(function () {
@@ -27,7 +27,7 @@ test('can create role with minimum length name (1 char)', function () {
 
 test('can create role with maximum length name (100 chars)', function () {
     $longName = str_repeat('a', 100);
-    
+
     $role = Role::create(['name' => $longName, 'slug' => 'long-name']);
 
     expect(strlen($role->name))->toBe(100);
@@ -37,9 +37,9 @@ test('SQLite allows name exceeding maximum length (no enforcement)', function ()
     // SQLite doesn't enforce VARCHAR length limits
     // In MySQL/PostgreSQL, this would fail with QueryException
     $tooLongName = str_repeat('a', 101);
-    
+
     $role = Role::create(['name' => $tooLongName, 'slug' => 'too-long']);
-    
+
     expect(strlen($role->name))->toBe(101);
 });
 
@@ -51,7 +51,7 @@ test('can create role with minimum length slug (1 char)', function () {
 
 test('can create role with maximum length slug (100 chars)', function () {
     $longSlug = str_repeat('a', 100);
-    
+
     $role = Role::create(['name' => 'Long Slug', 'slug' => $longSlug]);
 
     expect(strlen($role->slug))->toBe(100);
@@ -131,7 +131,7 @@ test('can order roles with same level', function () {
     Role::create(['name' => 'Third', 'slug' => 'third', 'level' => 50]);
 
     $roles = Role::where('level', 50)->orderBy('name')->get();
-    
+
     expect($roles)->toHaveCount(3)
         ->and($roles->first()->name)->toBe('First');
 });
@@ -198,7 +198,7 @@ test('use syncWithoutDetaching to prevent duplicates', function () {
 
     $role->permissions()->attach($permission->id);
     $role->permissions()->syncWithoutDetaching([$permission->id]); // Won't duplicate
-    
+
     expect($role->permissions)->toHaveCount(1);
 });
 
@@ -210,7 +210,7 @@ test('syncWithoutDetaching adds new permissions without removing existing', func
 
     $role->permissions()->attach($perm1->id);
     $role->permissions()->syncWithoutDetaching([$perm2->id, $perm3->id]);
-    
+
     expect($role->permissions)->toHaveCount(3);
 });
 
@@ -219,7 +219,7 @@ test('can attach permissions with pivot data', function () {
     $permission = Permission::create(['name' => 'Create', 'slug' => 'create']);
 
     $role->permissions()->attach($permission->id);
-    
+
     $pivot = $role->permissions()->first()->pivot;
     expect($pivot->created_at)->not->toBeNull();
 });
@@ -230,26 +230,26 @@ test('can toggle permissions', function () {
     $perm2 = Permission::create(['name' => 'Read', 'slug' => 'read']);
 
     $role->permissions()->attach($perm1->id);
-    
+
     // Toggle should remove perm1 and add perm2
     $role->permissions()->toggle([$perm1->id, $perm2->id]);
     $role->refresh();
-    
+
     expect($role->permissions)->toHaveCount(1)
         ->and($role->permissions->first()->slug)->toBe('read');
 });
 
 test('role with 100+ permissions', function () {
     $role = Role::create(['name' => 'Super Admin', 'slug' => 'super-admin', 'level' => 100]);
-    
+
     $permissionIds = [];
     for ($i = 1; $i <= 100; $i++) {
         $perm = Permission::create(['name' => "Permission $i", 'slug' => "perm.$i"]);
         $permissionIds[] = $perm->id;
     }
-    
+
     $role->permissions()->attach($permissionIds);
-    
+
     expect($role->permissions)->toHaveCount(100);
 });
 
@@ -259,7 +259,7 @@ test('role with 100+ permissions', function () {
 
 test('hasPermission with empty string returns false', function () {
     $role = Role::create(['name' => 'Admin', 'slug' => 'admin', 'level' => 100]);
-    
+
     expect($role->hasPermission(''))->toBeFalse();
 });
 
@@ -275,7 +275,7 @@ test('hasPermission is case sensitive', function () {
 
 test('hasPermission with SQL injection attempt', function () {
     $role = Role::create(['name' => 'Admin', 'slug' => 'admin', 'level' => 100]);
-    
+
     // Should safely handle SQL-like strings
     expect($role->hasPermission("'; DROP TABLE permissions; --"))->toBeFalse();
 });
@@ -305,7 +305,7 @@ test('hasAllPermissions with duplicate items counts unique', function () {
     // Current implementation counts array items, so duplicates fail
     // This documents the actual behavior - duplicates inflate the count
     expect($role->hasAllPermissions(['create', 'create', 'create']))->toBeFalse();
-    
+
     // Without duplicates works correctly
     expect($role->hasAllPermissions(['create']))->toBeTrue();
 });
@@ -338,7 +338,7 @@ test('can query roles without permissions', function () {
     $roleWithPerms->permissions()->attach($permission->id);
 
     $emptyRoles = Role::whereDoesntHave('permissions')->get();
-    
+
     expect($emptyRoles)->toHaveCount(1)
         ->and($emptyRoles->first()->slug)->toBe('empty');
 });
@@ -346,16 +346,16 @@ test('can query roles without permissions', function () {
 test('can count permissions per role', function () {
     $role1 = Role::create(['name' => 'Admin', 'slug' => 'admin', 'level' => 100]);
     $role2 = Role::create(['name' => 'Editor', 'slug' => 'editor', 'level' => 50]);
-    
+
     $perm1 = Permission::create(['name' => 'Create', 'slug' => 'create']);
     $perm2 = Permission::create(['name' => 'Read', 'slug' => 'read']);
     $perm3 = Permission::create(['name' => 'Update', 'slug' => 'update']);
-    
+
     $role1->permissions()->attach([$perm1->id, $perm2->id, $perm3->id]);
     $role2->permissions()->attach([$perm1->id]);
 
     $roles = Role::withCount('permissions')->orderBy('permissions_count', 'desc')->get();
-    
+
     expect($roles->first()->permissions_count)->toBe(3)
         ->and($roles->last()->permissions_count)->toBe(1);
 });
@@ -380,10 +380,10 @@ test('can swap slugs using temporary value', function () {
     $role1->update(['slug' => 'temp']);
     $role2->update(['slug' => 'role1']);
     $role1->update(['slug' => 'role2']);
-    
+
     $role1->refresh();
     $role2->refresh();
-    
+
     expect($role1->slug)->toBe('role2')
         ->and($role2->slug)->toBe('role1');
 });
@@ -395,9 +395,9 @@ test('can swap slugs using temporary value', function () {
 test('deleted role is not found in normal query', function () {
     $role = Role::create(['name' => 'Deletable', 'slug' => 'deletable', 'level' => 10]);
     $roleId = $role->id;
-    
+
     $role->delete();
-    
+
     expect(Role::find($roleId))->toBeNull()
         ->and(Role::where('slug', 'deletable')->first())->toBeNull();
 });
@@ -405,9 +405,9 @@ test('deleted role is not found in normal query', function () {
 test('can recreate role with same slug after delete', function () {
     $role = Role::create(['name' => 'Reusable', 'slug' => 'reusable', 'level' => 10]);
     $role->delete();
-    
+
     $newRole = Role::create(['name' => 'Reusable Again', 'slug' => 'reusable', 'level' => 20]);
-    
+
     expect($newRole->name)->toBe('Reusable Again');
 });
 
@@ -452,7 +452,7 @@ test('bulk delete with where clause', function () {
     Role::create(['name' => 'High 1', 'slug' => 'high1', 'level' => 100]);
 
     $deleted = Role::where('level', '<', 50)->delete();
-    
+
     expect($deleted)->toBe(2)
         ->and(Role::count())->toBe(1);
 });

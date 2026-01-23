@@ -14,7 +14,6 @@ use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\Access\Authorizable;
 use Illuminate\Notifications\Notifiable;
-use Illuminate\Support\Str;
 use Laravel\Sanctum\HasApiTokens;
 use Omnify\SsoClient\Models\OmnifyBase\UserCacheBaseModel;
 use Omnify\SsoClient\Models\Traits\HasConsoleSso;
@@ -28,10 +27,7 @@ use Omnify\SsoClient\Models\Traits\HasTeamPermissions;
  *
  * @see https://csrc.nist.gov/Projects/Role-Based-Access-Control NIST RBAC Standard
  */
-class UserCache extends UserCacheBaseModel implements
-    AuthenticatableContract,
-    AuthorizableContract,
-    CanResetPasswordContract
+class UserCache extends UserCacheBaseModel implements AuthenticatableContract, AuthorizableContract, CanResetPasswordContract
 {
     use Authenticatable, Authorizable, CanResetPassword, MustVerifyEmail;
     use HasApiTokens, HasFactory, Notifiable;
@@ -171,7 +167,6 @@ class UserCache extends UserCacheBaseModel implements
      * @param  Role|string  $role  Role instance or role slug
      * @param  string|null  $orgId  Organization ID for scoping. null = global.
      * @param  string|null  $branchId  Branch ID for scoping. null = org-wide.
-     * @return void
      *
      * @throws \InvalidArgumentException If role not found when passing slug
      *
@@ -193,20 +188,13 @@ class UserCache extends UserCacheBaseModel implements
     {
         $role = $this->resolveRole($role);
 
-        // Check if assignment already exists to avoid duplicates
-        $exists = $this->roles()
-            ->where('roles.id', $role->id)
-            ->wherePivot('console_org_id', $orgId)
-            ->wherePivot('console_branch_id', $branchId)
-            ->exists();
-
-        if ($exists) {
-            return; // Already assigned with this scope
-        }
-
-        $this->roles()->attach($role->id, [
-            'console_org_id' => $orgId,
-            'console_branch_id' => $branchId,
+        // Use syncWithoutDetaching to handle duplicates gracefully
+        // This will update existing pivot data or insert if not exists
+        $this->roles()->syncWithoutDetaching([
+            $role->id => [
+                'console_org_id' => $orgId,
+                'console_branch_id' => $branchId,
+            ],
         ]);
     }
 
@@ -278,7 +266,6 @@ class UserCache extends UserCacheBaseModel implements
      * @param  string  $roleSlug  Role slug to check
      * @param  string|null  $orgId  Organization context
      * @param  string|null  $branchId  Branch context
-     * @return bool
      *
      * @example
      * // Check if user is admin anywhere (global role)
@@ -357,12 +344,16 @@ class UserCache extends UserCacheBaseModel implements
                 ->delete();
         }
 
-        // Attach new roles
-        foreach ($toAttach as $roleId) {
-            $this->roles()->attach($roleId, [
-                'console_org_id' => $orgId,
-                'console_branch_id' => $branchId,
-            ]);
+        // Attach new roles using syncWithoutDetaching to handle existing records
+        if (! empty($toAttach)) {
+            $attachData = [];
+            foreach ($toAttach as $roleId) {
+                $attachData[$roleId] = [
+                    'console_org_id' => $orgId,
+                    'console_branch_id' => $branchId,
+                ];
+            }
+            $this->roles()->syncWithoutDetaching($attachData);
         }
 
         return [
@@ -375,7 +366,6 @@ class UserCache extends UserCacheBaseModel implements
      * Resolve a role from slug or instance.
      *
      * @param  Role|string  $role  Role instance or slug
-     * @return Role
      *
      * @throws \InvalidArgumentException If role not found
      */

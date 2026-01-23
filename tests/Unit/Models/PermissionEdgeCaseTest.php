@@ -26,7 +26,7 @@ test('can create permission with minimum length name (1 char)', function () {
 
 test('can create permission with maximum length name (100 chars)', function () {
     $longName = str_repeat('a', 100);
-    
+
     $permission = Permission::create(['name' => $longName, 'slug' => 'long-name']);
 
     expect(strlen($permission->name))->toBe(100);
@@ -36,15 +36,15 @@ test('SQLite allows name exceeding maximum length (no enforcement)', function ()
     // SQLite doesn't enforce VARCHAR length limits
     // In MySQL/PostgreSQL, this would fail with QueryException
     $tooLongName = str_repeat('a', 101);
-    
+
     $permission = Permission::create(['name' => $tooLongName, 'slug' => 'too-long']);
-    
+
     expect(strlen($permission->name))->toBe(101);
 });
 
 test('can create permission with maximum length slug (100 chars)', function () {
     $longSlug = str_repeat('a', 100);
-    
+
     $permission = Permission::create(['name' => 'Long Slug', 'slug' => $longSlug]);
 
     expect(strlen($permission->slug))->toBe(100);
@@ -52,7 +52,7 @@ test('can create permission with maximum length slug (100 chars)', function () {
 
 test('can create permission with maximum length group (50 chars)', function () {
     $longGroup = str_repeat('a', 50);
-    
+
     $permission = Permission::create(['name' => 'Test', 'slug' => 'test', 'group' => $longGroup]);
 
     expect(strlen($permission->group))->toBe(50);
@@ -61,9 +61,9 @@ test('can create permission with maximum length group (50 chars)', function () {
 test('SQLite allows group exceeding maximum length (no enforcement)', function () {
     // SQLite doesn't enforce VARCHAR length limits
     $tooLongGroup = str_repeat('a', 51);
-    
+
     $permission = Permission::create(['name' => 'Test', 'slug' => 'test', 'group' => $tooLongGroup]);
-    
+
     expect(strlen($permission->group))->toBe(51);
 });
 
@@ -160,7 +160,7 @@ test('can filter permissions with empty string group', function () {
     // Empty string and null are different
     $emptyGroup = Permission::where('group', '')->get();
     $nullGroup = Permission::whereNull('group')->get();
-    
+
     expect($emptyGroup)->toHaveCount(1)
         ->and($nullGroup)->toHaveCount(1);
 });
@@ -172,7 +172,7 @@ test('can get all unique groups including null', function () {
     Permission::create(['name' => 'Global', 'slug' => 'global', 'group' => null]);
 
     $allGroups = Permission::distinct()->pluck('group');
-    
+
     expect($allGroups)->toContain('posts')
         ->and($allGroups)->toContain('users')
         ->and($allGroups)->toContain(null);
@@ -184,7 +184,7 @@ test('can group permissions by group with null handling', function () {
     Permission::create(['name' => 'Global 2', 'slug' => 'global2', 'group' => null]);
 
     $grouped = Permission::get()->groupBy(fn ($p) => $p->group ?? 'ungrouped');
-    
+
     expect($grouped)->toHaveKey('posts')
         ->and($grouped)->toHaveKey('ungrouped')
         ->and($grouped['ungrouped'])->toHaveCount(2);
@@ -196,12 +196,12 @@ test('can group permissions by group with null handling', function () {
 
 test('permission can belong to multiple roles', function () {
     $permission = Permission::create(['name' => 'Shared', 'slug' => 'shared']);
-    
+
     for ($i = 1; $i <= 10; $i++) {
         $role = Role::create(['name' => "Role $i", 'slug' => "role$i", 'level' => $i * 10]);
         $permission->roles()->attach($role->id);
     }
-    
+
     expect($permission->roles)->toHaveCount(10);
 });
 
@@ -235,7 +235,7 @@ test('can sync roles from permission side', function () {
 
     $permission->roles()->sync([$role2->id, $role3->id]);
     $permission->refresh();
-    
+
     expect($permission->roles)->toHaveCount(2)
         ->and($permission->roles->pluck('slug')->toArray())->toContain('editor', 'member');
 });
@@ -269,7 +269,7 @@ test('can find permissions by slug pattern', function () {
     Permission::create(['name' => 'Users Create', 'slug' => 'users.create']);
 
     $postPermissions = Permission::where('slug', 'like', 'posts.%')->get();
-    
+
     expect($postPermissions)->toHaveCount(4);
 });
 
@@ -277,12 +277,12 @@ test('can find permissions not assigned to any role', function () {
     $perm1 = Permission::create(['name' => 'Assigned', 'slug' => 'assigned']);
     Permission::create(['name' => 'Orphan 1', 'slug' => 'orphan1']);
     Permission::create(['name' => 'Orphan 2', 'slug' => 'orphan2']);
-    
+
     $role = Role::create(['name' => 'Admin', 'slug' => 'admin', 'level' => 100]);
     $role->permissions()->attach($perm1->id);
 
     $orphans = Permission::whereDoesntHave('roles')->get();
-    
+
     expect($orphans)->toHaveCount(2);
 });
 
@@ -290,16 +290,16 @@ test('can query permissions with role count', function () {
     $perm1 = Permission::create(['name' => 'Popular', 'slug' => 'popular']);
     $perm2 = Permission::create(['name' => 'Less Popular', 'slug' => 'less-popular']);
     Permission::create(['name' => 'Unpopular', 'slug' => 'unpopular']);
-    
+
     $role1 = Role::create(['name' => 'Admin', 'slug' => 'admin', 'level' => 100]);
     $role2 = Role::create(['name' => 'Editor', 'slug' => 'editor', 'level' => 50]);
     $role3 = Role::create(['name' => 'Member', 'slug' => 'member', 'level' => 10]);
-    
+
     $perm1->roles()->attach([$role1->id, $role2->id, $role3->id]);
     $perm2->roles()->attach([$role1->id]);
 
     $permissions = Permission::withCount('roles')->orderBy('roles_count', 'desc')->get();
-    
+
     expect($permissions->first()->roles_count)->toBe(3)
         ->and($permissions->last()->roles_count)->toBe(0);
 });
@@ -321,7 +321,7 @@ test('slug uniqueness is case sensitive in SQLite', function () {
 
 test('name uniqueness is enforced', function () {
     Permission::create(['name' => 'Same Name', 'slug' => 'slug1']);
-    
+
     expect(fn () => Permission::create(['name' => 'Same Name', 'slug' => 'slug2']))
         ->toThrow(\Illuminate\Database\QueryException::class);
 });
@@ -337,7 +337,7 @@ test('can update permission preserving relationships', function () {
 
     $permission->update(['name' => 'Updated', 'slug' => 'updated', 'group' => 'new']);
     $permission->refresh();
-    
+
     expect($permission->name)->toBe('Updated')
         ->and($permission->roles)->toHaveCount(1);
 });
@@ -345,7 +345,7 @@ test('can update permission preserving relationships', function () {
 test('updating to duplicate slug fails', function () {
     Permission::create(['name' => 'First', 'slug' => 'first']);
     $second = Permission::create(['name' => 'Second', 'slug' => 'second']);
-    
+
     expect(fn () => $second->update(['slug' => 'first']))
         ->toThrow(\Illuminate\Database\QueryException::class);
 });
@@ -357,9 +357,9 @@ test('updating to duplicate slug fails', function () {
 test('can recreate permission with same slug after delete', function () {
     $permission = Permission::create(['name' => 'Reusable', 'slug' => 'reusable']);
     $permission->delete();
-    
+
     $newPermission = Permission::create(['name' => 'Reusable Again', 'slug' => 'reusable']);
-    
+
     expect($newPermission->name)->toBe('Reusable Again');
 });
 
@@ -367,11 +367,11 @@ test('deleting permission removes pivot records', function () {
     $permission = Permission::create(['name' => 'To Delete', 'slug' => 'to-delete']);
     $role = Role::create(['name' => 'Admin', 'slug' => 'admin', 'level' => 100]);
     $permission->roles()->attach($role->id);
-    
+
     $permissionId = $permission->id;
     $permission->roles()->detach();
     $permission->delete();
-    
+
     $pivotCount = \DB::table('role_permissions')->where('permission_id', $permissionId)->count();
     expect($pivotCount)->toBe(0);
 });
@@ -383,22 +383,22 @@ test('deleting permission removes pivot records', function () {
 test('can create many permissions with firstOrCreate', function () {
     $slugs = ['create', 'read', 'update', 'delete'];
     $permissions = [];
-    
+
     foreach ($slugs as $slug) {
         $permissions[] = Permission::firstOrCreate(
             ['slug' => "posts.$slug"],
-            ['name' => ucfirst($slug) . ' Posts', 'group' => 'posts']
+            ['name' => ucfirst($slug).' Posts', 'group' => 'posts']
         );
     }
-    
+
     // Run again - should not create duplicates
     foreach ($slugs as $slug) {
         Permission::firstOrCreate(
             ['slug' => "posts.$slug"],
-            ['name' => ucfirst($slug) . ' Posts', 'group' => 'posts']
+            ['name' => ucfirst($slug).' Posts', 'group' => 'posts']
         );
     }
-    
+
     expect(Permission::count())->toBe(4);
 });
 
@@ -415,7 +415,7 @@ test('can upsert permissions', function () {
     );
 
     expect(Permission::count())->toBe(2);
-    
+
     $existing = Permission::where('slug', 'existing')->first();
     expect($existing->name)->toBe('Existing Updated')
         ->and($existing->group)->toBe('new');
@@ -427,7 +427,7 @@ test('can bulk delete by group', function () {
     Permission::create(['name' => 'P3', 'slug' => 'p3', 'group' => 'keep']);
 
     $deleted = Permission::where('group', 'delete-me')->delete();
-    
+
     expect($deleted)->toBe(2)
         ->and(Permission::count())->toBe(1);
 });
@@ -438,25 +438,25 @@ test('can bulk delete by group', function () {
 
 test('query on empty table returns empty collection', function () {
     $results = Permission::all();
-    
+
     expect($results)->toBeInstanceOf(\Illuminate\Database\Eloquent\Collection::class)
         ->and($results)->toHaveCount(0);
 });
 
 test('first on empty table returns null', function () {
     $result = Permission::first();
-    
+
     expect($result)->toBeNull();
 });
 
 test('count on empty table returns 0', function () {
     $count = Permission::count();
-    
+
     expect($count)->toBe(0);
 });
 
 test('groupBy on empty table returns empty collection', function () {
     $grouped = Permission::get()->groupBy('group');
-    
+
     expect($grouped)->toBeEmpty();
 });

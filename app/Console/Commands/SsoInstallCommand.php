@@ -64,6 +64,7 @@ class SsoInstallCommand extends Command
                 str_contains($content, 'extends SsoUser') ||
                 str_contains($content, 'use Omnify\\SsoClient\\Models\\User as')) {
                 $this->line('User model already extends SSO Client User. Skipping.');
+
                 return;
             }
 
@@ -71,6 +72,7 @@ class SsoInstallCommand extends Command
             if (! $force && ! $this->confirm('User model exists. Update it to extend SSO Client User?', true)) {
                 $this->warn('Skipped. You need to manually update your User model.');
                 $this->showManualUserSetup();
+
                 return;
             }
 
@@ -119,7 +121,7 @@ PHP;
     protected function updateExistingUserModel(string $path, string $content): void
     {
         // Backup original file
-        $backupPath = $path . '.backup.' . date('YmdHis');
+        $backupPath = $path.'.backup.'.date('YmdHis');
         File::copy($path, $backupPath);
         $this->line("Backup created: {$backupPath}");
 
@@ -157,6 +159,7 @@ PHP;
         if (! $wasReplaced) {
             $this->warn('Could not automatically update User model extends clause.');
             $this->showManualUserSetup();
+
             return;
         }
 
@@ -183,7 +186,7 @@ PHP;
         ];
 
         foreach ($useStatementsToRemove as $useStatement) {
-            $updated = str_replace($useStatement . "\n", '', $updated);
+            $updated = str_replace($useStatement."\n", '', $updated);
         }
 
         File::put($path, $updated);

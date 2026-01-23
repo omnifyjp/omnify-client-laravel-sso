@@ -16,7 +16,7 @@ beforeEach(function () {
 // =============================================================================
 
 test('allows relative URLs starting with /', function () {
-    $validator = new RedirectUrlValidator();
+    $validator = new RedirectUrlValidator;
 
     expect($validator->validate('/dashboard'))->toBe('/dashboard');
     expect($validator->validate('/users/profile'))->toBe('/users/profile');
@@ -26,7 +26,7 @@ test('allows relative URLs starting with /', function () {
 });
 
 test('allows app URL host', function () {
-    $validator = new RedirectUrlValidator();
+    $validator = new RedirectUrlValidator;
 
     expect($validator->validate('https://myapp.example.com/dashboard'))
         ->toBe('https://myapp.example.com/dashboard');
@@ -35,21 +35,21 @@ test('allows app URL host', function () {
 });
 
 test('allows frontend URL host', function () {
-    $validator = new RedirectUrlValidator();
+    $validator = new RedirectUrlValidator;
 
     expect($validator->validate('https://frontend.example.com/callback'))
         ->toBe('https://frontend.example.com/callback');
 });
 
 test('allows configured trusted hosts', function () {
-    $validator = new RedirectUrlValidator();
+    $validator = new RedirectUrlValidator;
 
     expect($validator->validate('https://allowed.org/path'))
         ->toBe('https://allowed.org/path');
 });
 
 test('allows wildcard subdomain matches', function () {
-    $validator = new RedirectUrlValidator();
+    $validator = new RedirectUrlValidator;
 
     expect($validator->validate('https://sub.trusted.com/path'))
         ->toBe('https://sub.trusted.com/path');
@@ -60,7 +60,7 @@ test('allows wildcard subdomain matches', function () {
 });
 
 test('allows manually added hosts', function () {
-    $validator = new RedirectUrlValidator();
+    $validator = new RedirectUrlValidator;
     $validator->addAllowedHost('custom.domain.com');
 
     expect($validator->validate('https://custom.domain.com/'))
@@ -72,7 +72,7 @@ test('allows manually added hosts', function () {
 // =============================================================================
 
 test('rejects external domains not in allowed list', function () {
-    $validator = new RedirectUrlValidator();
+    $validator = new RedirectUrlValidator;
 
     expect($validator->validate('https://evil.com/'))->toBe('/');
     expect($validator->validate('https://attacker.org/phishing'))->toBe('/');
@@ -80,7 +80,7 @@ test('rejects external domains not in allowed list', function () {
 });
 
 test('rejects protocol-relative URLs (//evil.com)', function () {
-    $validator = new RedirectUrlValidator();
+    $validator = new RedirectUrlValidator;
 
     expect($validator->validate('//evil.com'))->toBe('/');
     expect($validator->validate('//attacker.org/path'))->toBe('/');
@@ -88,7 +88,7 @@ test('rejects protocol-relative URLs (//evil.com)', function () {
 });
 
 test('rejects backslash URL bypass attempts', function () {
-    $validator = new RedirectUrlValidator();
+    $validator = new RedirectUrlValidator;
 
     expect($validator->validate('/\\evil.com'))->toBe('/');
     expect($validator->validate('/\\/evil.com'))->toBe('/');
@@ -96,7 +96,7 @@ test('rejects backslash URL bypass attempts', function () {
 });
 
 test('rejects URL-encoded bypass attempts', function () {
-    $validator = new RedirectUrlValidator();
+    $validator = new RedirectUrlValidator;
 
     // %2f = /
     expect($validator->validate('/%2f/evil.com'))->toBe('/');
@@ -108,7 +108,7 @@ test('rejects URL-encoded bypass attempts', function () {
 });
 
 test('rejects dangerous protocols', function () {
-    $validator = new RedirectUrlValidator();
+    $validator = new RedirectUrlValidator;
 
     expect($validator->validate('javascript:alert(1)'))->toBe('/');
     expect($validator->validate('JAVASCRIPT:alert(1)'))->toBe('/');
@@ -119,7 +119,7 @@ test('rejects dangerous protocols', function () {
 });
 
 test('rejects URLs with javascript protocol with spaces/tabs', function () {
-    $validator = new RedirectUrlValidator();
+    $validator = new RedirectUrlValidator;
 
     expect($validator->validate(' javascript:alert(1)'))->toBe('/');
     expect($validator->validate("\tjavascript:alert(1)"))->toBe('/');
@@ -127,7 +127,7 @@ test('rejects URLs with javascript protocol with spaces/tabs', function () {
 });
 
 test('rejects similar domain attacks', function () {
-    $validator = new RedirectUrlValidator();
+    $validator = new RedirectUrlValidator;
 
     // Attacker registers similar domains
     expect($validator->validate('https://myapp.example.com.evil.com/'))->toBe('/');
@@ -135,7 +135,7 @@ test('rejects similar domain attacks', function () {
 });
 
 test('rejects URLs without proper host parsing', function () {
-    $validator = new RedirectUrlValidator();
+    $validator = new RedirectUrlValidator;
 
     expect($validator->validate('@evil.com'))->toBe('/');
     expect($validator->validate('user@evil.com'))->toBe('/');
@@ -146,28 +146,28 @@ test('rejects URLs without proper host parsing', function () {
 // =============================================================================
 
 test('handles null input', function () {
-    $validator = new RedirectUrlValidator();
+    $validator = new RedirectUrlValidator;
 
     expect($validator->validate(null))->toBe('/');
     expect($validator->validate(null, '/fallback'))->toBe('/fallback');
 });
 
 test('handles empty string input', function () {
-    $validator = new RedirectUrlValidator();
+    $validator = new RedirectUrlValidator;
 
     expect($validator->validate(''))->toBe('/');
     expect($validator->validate('', '/fallback'))->toBe('/fallback');
 });
 
 test('uses custom default URL', function () {
-    $validator = new RedirectUrlValidator();
+    $validator = new RedirectUrlValidator;
 
     expect($validator->validate('https://evil.com/', '/dashboard'))->toBe('/dashboard');
     expect($validator->validate(null, '/home'))->toBe('/home');
 });
 
 test('can disable relative URLs', function () {
-    $validator = new RedirectUrlValidator();
+    $validator = new RedirectUrlValidator;
     $validator->setAllowRelative(false);
 
     expect($validator->validate('/dashboard'))->toBe('/');
@@ -176,7 +176,7 @@ test('can disable relative URLs', function () {
 });
 
 test('preserves query strings and fragments', function () {
-    $validator = new RedirectUrlValidator();
+    $validator = new RedirectUrlValidator;
 
     expect($validator->validate('/path?foo=bar&baz=qux'))
         ->toBe('/path?foo=bar&baz=qux');
@@ -187,7 +187,7 @@ test('preserves query strings and fragments', function () {
 });
 
 test('rejects overly long URLs', function () {
-    $validator = new RedirectUrlValidator();
+    $validator = new RedirectUrlValidator;
     $maxLength = config('sso-client.security.max_redirect_url_length', 2048);
 
     $longPath = '/'.str_repeat('a', $maxLength + 100);
@@ -201,7 +201,7 @@ test('rejects overly long URLs', function () {
 // =============================================================================
 
 test('getAllowedHosts returns configured hosts', function () {
-    $validator = new RedirectUrlValidator();
+    $validator = new RedirectUrlValidator;
     $hosts = $validator->getAllowedHosts();
 
     expect($hosts)->toContain('myapp.example.com');
@@ -211,7 +211,7 @@ test('getAllowedHosts returns configured hosts', function () {
 });
 
 test('addAllowedHost adds to list without duplicates', function () {
-    $validator = new RedirectUrlValidator();
+    $validator = new RedirectUrlValidator;
     $validator->addAllowedHost('new.domain.com');
     $validator->addAllowedHost('new.domain.com'); // Duplicate
 
@@ -226,7 +226,7 @@ test('addAllowedHost adds to list without duplicates', function () {
 // =============================================================================
 
 test('prevents OAuth redirect manipulation attack', function () {
-    $validator = new RedirectUrlValidator();
+    $validator = new RedirectUrlValidator;
 
     // Attacker tries to steal OAuth code by manipulating redirect
     expect($validator->validate('https://attacker.com/steal?code='))
@@ -234,7 +234,7 @@ test('prevents OAuth redirect manipulation attack', function () {
 });
 
 test('prevents login phishing redirect', function () {
-    $validator = new RedirectUrlValidator();
+    $validator = new RedirectUrlValidator;
 
     // Attacker creates a phishing page that looks like login
     expect($validator->validate('https://myapp-example.com/login'))
@@ -244,7 +244,7 @@ test('prevents login phishing redirect', function () {
 });
 
 test('prevents credential harvesting after logout', function () {
-    $validator = new RedirectUrlValidator();
+    $validator = new RedirectUrlValidator;
 
     // After logout, attacker tries to redirect to credential harvesting page
     expect($validator->validate('https://login-myapp.example.com/'))

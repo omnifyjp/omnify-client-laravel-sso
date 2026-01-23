@@ -10,16 +10,16 @@ use Omnify\SsoClient\Models\Role;
 
 /**
  * Seeder for default SSO roles and permissions.
- * 
+ *
  * Creates standard roles (admin, manager, supervisor, member, viewer)
  * and base permissions for service administration.
- * 
+ *
  * Usage in your DatabaseSeeder:
  *   $this->call(\Omnify\SsoClient\Database\Seeders\SsoRolesSeeder::class);
  */
 class SsoRolesSeeder extends Seeder
 {
-    use FetchesConsoleData, AssignsRoles;
+    use AssignsRoles, FetchesConsoleData;
 
     public function run(): void
     {
@@ -43,7 +43,7 @@ class SsoRolesSeeder extends Seeder
             );
         }
 
-        $this->logInfo('Created ' . count($roles) . ' roles');
+        $this->logInfo('Created '.count($roles).' roles');
     }
 
     /**
@@ -97,7 +97,7 @@ class SsoRolesSeeder extends Seeder
         foreach ($permissions as $permission) {
             // Generate name from slug if not provided
             $name = $permission['name'] ?? ucwords(str_replace(['.', '_', '-'], ' ', $permission['slug']));
-            
+
             Permission::updateOrCreate(
                 ['slug' => $permission['slug']],
                 [
@@ -165,7 +165,7 @@ class SsoRolesSeeder extends Seeder
         // Admin gets all permissions
         if ($admin) {
             $admin->permissions()->sync(Permission::pluck('id'));
-            $this->logInfo("Assigned " . Permission::count() . " permissions to Administrator");
+            $this->logInfo('Assigned '.Permission::count().' permissions to Administrator');
         }
 
         // Manager gets most permissions except delete and sync
@@ -187,11 +187,11 @@ class SsoRolesSeeder extends Seeder
         if ($supervisor) {
             $supervisorPerms = Permission::where(function ($q) {
                 $q->where('slug', 'like', '%.view')
-                  ->orWhere('slug', 'like', 'dashboard.%')
-                  ->orWhereIn('slug', [
-                      'service-admin.user.edit',
-                      'service-admin.team.edit',
-                  ]);
+                    ->orWhere('slug', 'like', 'dashboard.%')
+                    ->orWhereIn('slug', [
+                        'service-admin.user.edit',
+                        'service-admin.team.edit',
+                    ]);
             })->pluck('id');
             $supervisor->permissions()->sync($supervisorPerms);
             $this->logInfo("Assigned {$supervisorPerms->count()} permissions to Supervisor");

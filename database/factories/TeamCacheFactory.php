@@ -1,10 +1,9 @@
 <?php
 
-namespace Omnify\SsoClient\Database\Factories;
+namespace Database\Factories;
 
-use Omnify\SsoClient\Models\TeamCache;
 use Illuminate\Database\Eloquent\Factories\Factory;
-use Illuminate\Support\Str;
+use Omnify\SsoClient\Models\TeamCache;
 
 /**
  * @extends Factory<TeamCache>
@@ -21,19 +20,9 @@ class TeamCacheFactory extends Factory
     public function definition(): array
     {
         return [
-            'console_team_id' => (string) Str::uuid(),
-            'console_org_id' => (string) Str::uuid(),
-            'name' => fake()->words(2, true) . ' Team',
+            'console_team_id' => fake()->sentence(),
+            'console_org_id' => fake()->sentence(),
+            'name' => fake()->sentence(3),
         ];
-    }
-
-    /**
-     * Create team for specific organization.
-     */
-    public function forOrganization(string $orgId): static
-    {
-        return $this->state(fn () => [
-            'console_org_id' => $orgId,
-        ]);
     }
 }

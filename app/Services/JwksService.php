@@ -89,10 +89,10 @@ class JwksService
 
     /**
      * Convert JWK to PEM format.
-     * 
+     *
      * JWKからPEM形式の公開鍵に変換する
      *
-     * @param array<string, mixed> $jwk
+     * @param  array<string, mixed>  $jwk
      */
     private function jwkToPem(array $jwk): string
     {

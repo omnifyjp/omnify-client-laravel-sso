@@ -10,7 +10,6 @@
  */
 
 use Illuminate\Support\Facades\Route;
-use Illuminate\Support\Str;
 use Omnify\SsoClient\Models\BranchCache as Branch;
 use Omnify\SsoClient\Models\Role;
 use Omnify\SsoClient\Models\UserCache as User;
@@ -65,13 +64,13 @@ beforeEach(function () {
 
     // Test routes requiring different role levels
     Route::middleware(['sso.auth', 'sso.org', 'sso.role:admin'])
-        ->get('/test-admin-only', fn() => response()->json(['message' => 'admin access granted']));
+        ->get('/test-admin-only', fn () => response()->json(['message' => 'admin access granted']));
 
     Route::middleware(['sso.auth', 'sso.org', 'sso.role:manager'])
-        ->get('/test-manager-only', fn() => response()->json(['message' => 'manager access granted']));
+        ->get('/test-manager-only', fn () => response()->json(['message' => 'manager access granted']));
 
     Route::middleware(['sso.auth', 'sso.org', 'sso.role:member'])
-        ->get('/test-member-only', fn() => response()->json(['message' => 'member access granted']));
+        ->get('/test-member-only', fn () => response()->json(['message' => 'member access granted']));
 });
 
 // =============================================================================

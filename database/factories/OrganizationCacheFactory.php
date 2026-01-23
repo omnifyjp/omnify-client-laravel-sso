@@ -1,10 +1,9 @@
 <?php
 
-namespace Omnify\SsoClient\Database\Factories;
+namespace Database\Factories;
 
-use Omnify\SsoClient\Models\OrganizationCache;
 use Illuminate\Database\Eloquent\Factories\Factory;
-use Illuminate\Support\Str;
+use Omnify\SsoClient\Models\OrganizationCache;
 
 /**
  * @extends Factory<OrganizationCache>
@@ -21,10 +20,10 @@ class OrganizationCacheFactory extends Factory
     public function definition(): array
     {
         return [
-            'console_org_id' => (string) Str::uuid(),
-            'name' => fake()->company(),
-            'code' => strtoupper(fake()->unique()->lexify('???')),
-            'is_active' => true,
+            'console_org_id' => fake()->sentence(),
+            'name' => fake()->sentence(3),
+            'code' => fake()->unique()->regexify('[A-Z0-9]{8}'),
+            'is_active' => fake()->boolean(),
         ];
     }
 }

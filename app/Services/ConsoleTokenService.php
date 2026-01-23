@@ -95,7 +95,7 @@ class ConsoleTokenService
     /**
      * Store new tokens for user.
      *
-     * @param array{access_token: string, refresh_token: string, expires_in: int} $tokens
+     * @param  array{access_token: string, refresh_token: string, expires_in: int}  $tokens
      */
     public function storeTokens(Model $user, array $tokens): void
     {

@@ -8,31 +8,32 @@ use DateTimeImmutable;
 use DateTimeZone;
 use Illuminate\Support\Facades\Log;
 use Lcobucci\JWT\Encoding\JoseEncoder;
-use Lcobucci\JWT\Token\Parser;
 use Lcobucci\JWT\Signer\Key\InMemory;
 use Lcobucci\JWT\Signer\Rsa\Sha256;
+use Lcobucci\JWT\Token\Parser;
 use Lcobucci\JWT\Token\Plain;
-use Lcobucci\JWT\Validation\Validator;
-use Lcobucci\JWT\Validation\Constraint\SignedWith;
 use Lcobucci\JWT\Validation\Constraint\LooseValidAt;
+use Lcobucci\JWT\Validation\Constraint\SignedWith;
+use Lcobucci\JWT\Validation\Validator;
 use Omnify\SsoClient\Exceptions\ConsoleAuthException;
 use Psr\Clock\ClockInterface;
 
 /**
  * JWT Token検証サービス
- * 
+ *
  * lcobucci/jwt v5.x対応
  */
 class JwtVerifier
 {
     private Parser $parser;
+
     private Validator $validator;
 
     public function __construct(
         private readonly JwksService $jwksService
     ) {
-        $this->parser = new Parser(new JoseEncoder());
-        $this->validator = new Validator();
+        $this->parser = new Parser(new JoseEncoder);
+        $this->validator = new Validator;
     }
 
     /**
@@ -48,6 +49,7 @@ class JwtVerifier
 
             if (! $parsedToken instanceof Plain) {
                 Log::warning('[SSO] Token is not a Plain token');
+
                 return null;
             }
 
@@ -61,24 +63,25 @@ class JwtVerifier
             // 公開鍵を取得
             $publicKey = $this->jwksService->getPublicKey($kid);
             if (! $publicKey) {
-                Log::warning('[SSO] Public key not found for kid: ' . $kid);
+                Log::warning('[SSO] Public key not found for kid: '.$kid);
                 throw new ConsoleAuthException('Public key not found for kid: '.$kid);
             }
 
             // トークンを検証（署名と有効期限）
             // PSR-20 Clock実装を使用（クロックスキュー対策として5分の許容を追加）
-            $clock = new class implements ClockInterface {
+            $clock = new class implements ClockInterface
+            {
                 public function now(): DateTimeImmutable
                 {
                     return new DateTimeImmutable('now', new DateTimeZone('UTC'));
                 }
             };
-            
+
             // 5分の許容時間を設定（サーバー間の時刻ずれ対策）
             $leeway = new \DateInterval('PT5M');
-            
+
             $constraints = [
-                new SignedWith(new Sha256(), InMemory::plainText($publicKey)),
+                new SignedWith(new Sha256, InMemory::plainText($publicKey)),
                 new LooseValidAt($clock, $leeway),
             ];
 
@@ -88,15 +91,16 @@ class JwtVerifier
                     try {
                         $this->validator->assert($parsedToken, $constraint);
                     } catch (\Throwable $e) {
-                        Log::warning('[SSO] Token validation failed: ' . $e->getMessage());
+                        Log::warning('[SSO] Token validation failed: '.$e->getMessage());
                     }
                 }
+
                 return null;
             }
 
             // クレームを抽出
             $claims = $parsedToken->claims();
-            
+
             return [
                 'sub' => (int) $claims->get('sub'),
                 'email' => $claims->get('email'),
@@ -104,10 +108,10 @@ class JwtVerifier
                 'aud' => $claims->get('aud'),
             ];
         } catch (ConsoleAuthException $e) {
-            Log::warning('[SSO] Auth exception: ' . $e->getMessage());
+            Log::warning('[SSO] Auth exception: '.$e->getMessage());
             throw $e;
         } catch (\Throwable $e) {
-            Log::error('[SSO] JWT verification failed: ' . $e->getMessage(), [
+            Log::error('[SSO] JWT verification failed: '.$e->getMessage(), [
                 'exception' => get_class($e),
                 'trace' => $e->getTraceAsString(),
             ]);

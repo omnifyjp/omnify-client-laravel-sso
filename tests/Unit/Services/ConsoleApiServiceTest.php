@@ -7,8 +7,6 @@
  */
 
 use Illuminate\Support\Facades\Http;
-use Omnify\SsoClient\Exceptions\ConsoleAuthException;
-use Omnify\SsoClient\Exceptions\ConsoleServerException;
 use Omnify\SsoClient\Services\ConsoleApiService;
 
 // =============================================================================

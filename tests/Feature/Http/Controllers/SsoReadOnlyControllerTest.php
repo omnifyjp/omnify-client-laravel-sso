@@ -7,10 +7,10 @@
  * Tests for roles and permissions read-only endpoints
  */
 
-use Omnify\SsoClient\Models\User;
-use Omnify\SsoClient\Models\Role;
-use Omnify\SsoClient\Models\Permission;
 use Illuminate\Support\Str;
+use Omnify\SsoClient\Models\Permission;
+use Omnify\SsoClient\Models\Role;
+use Omnify\SsoClient\Models\User;
 
 beforeEach(function () {
     $this->artisan('migrate', ['--database' => 'testing']);
@@ -28,7 +28,7 @@ test('roles endpoint requires authentication', function () {
 
 test('roles endpoint returns all roles', function () {
     $user = User::factory()->create();
-    
+
     Role::create(['name' => 'Admin', 'slug' => 'admin', 'level' => 100]);
     Role::create(['name' => 'Editor', 'slug' => 'editor', 'level' => 50]);
     Role::create(['name' => 'Member', 'slug' => 'member', 'level' => 10]);
@@ -47,7 +47,7 @@ test('roles endpoint returns all roles', function () {
 
 test('roles are ordered by level descending', function () {
     $user = User::factory()->create();
-    
+
     Role::create(['name' => 'Member', 'slug' => 'member', 'level' => 10]);
     Role::create(['name' => 'Admin', 'slug' => 'admin', 'level' => 100]);
     Role::create(['name' => 'Editor', 'slug' => 'editor', 'level' => 50]);
@@ -56,7 +56,7 @@ test('roles are ordered by level descending', function () {
     $response = $this->getJson('/api/sso/roles');
 
     $response->assertStatus(200);
-    
+
     $slugs = collect($response->json('data'))->pluck('slug')->toArray();
     expect($slugs)->toBe(['admin', 'editor', 'member']);
 });
@@ -67,7 +67,7 @@ test('roles are ordered by level descending', function () {
 
 test('single role endpoint requires authentication', function () {
     $role = Role::create(['name' => 'Admin', 'slug' => 'admin', 'level' => 100]);
-    
+
     $response = $this->getJson("/api/sso/roles/{$role->id}");
 
     $response->assertStatus(401);
@@ -75,7 +75,7 @@ test('single role endpoint requires authentication', function () {
 
 test('single role endpoint returns role with permissions', function () {
     $user = User::factory()->create();
-    
+
     $role = Role::create(['name' => 'Admin', 'slug' => 'admin', 'level' => 100]);
     $perm1 = Permission::create(['name' => 'Create Users', 'slug' => 'users.create']);
     $perm2 = Permission::create(['name' => 'Delete Users', 'slug' => 'users.delete']);
@@ -116,7 +116,7 @@ test('permissions endpoint requires authentication', function () {
 
 test('permissions endpoint returns all permissions', function () {
     $user = User::factory()->create();
-    
+
     Permission::create(['name' => 'Create Users', 'slug' => 'users.create', 'group' => 'users']);
     Permission::create(['name' => 'Delete Users', 'slug' => 'users.delete', 'group' => 'users']);
     Permission::create(['name' => 'View Reports', 'slug' => 'reports.view', 'group' => 'reports']);
@@ -136,7 +136,7 @@ test('permissions endpoint returns all permissions', function () {
 
 test('permissions can be filtered by group', function () {
     $user = User::factory()->create();
-    
+
     Permission::create(['name' => 'Create Users', 'slug' => 'users.create', 'group' => 'users']);
     Permission::create(['name' => 'Delete Users', 'slug' => 'users.delete', 'group' => 'users']);
     Permission::create(['name' => 'View Reports', 'slug' => 'reports.view', 'group' => 'reports']);
@@ -150,7 +150,7 @@ test('permissions can be filtered by group', function () {
 
 test('permissions can be searched by slug', function () {
     $user = User::factory()->create();
-    
+
     Permission::create(['name' => 'Create Users', 'slug' => 'users.create', 'group' => 'users']);
     Permission::create(['name' => 'Delete Users', 'slug' => 'users.delete', 'group' => 'users']);
     Permission::create(['name' => 'View Reports', 'slug' => 'reports.view', 'group' => 'reports']);
@@ -164,7 +164,7 @@ test('permissions can be searched by slug', function () {
 
 test('permissions can be returned grouped', function () {
     $user = User::factory()->create();
-    
+
     Permission::create(['name' => 'Create Users', 'slug' => 'users.create', 'group' => 'users']);
     Permission::create(['name' => 'Delete Users', 'slug' => 'users.delete', 'group' => 'users']);
     Permission::create(['name' => 'View Reports', 'slug' => 'reports.view', 'group' => 'reports']);
@@ -191,13 +191,13 @@ test('permission matrix endpoint requires authentication', function () {
 
 test('permission matrix endpoint returns roles and permissions mapping', function () {
     $user = User::factory()->create();
-    
+
     $adminRole = Role::create(['name' => 'Admin', 'slug' => 'admin', 'level' => 100]);
     $memberRole = Role::create(['name' => 'Member', 'slug' => 'member', 'level' => 10]);
-    
+
     $perm1 = Permission::create(['name' => 'Create Users', 'slug' => 'users.create', 'group' => 'users']);
     $perm2 = Permission::create(['name' => 'View Reports', 'slug' => 'reports.view', 'group' => 'reports']);
-    
+
     $adminRole->permissions()->attach([$perm1->id, $perm2->id]);
     $memberRole->permissions()->attach([$perm2->id]);
 

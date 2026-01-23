@@ -2,7 +2,7 @@
 
 /**
  * SSO Client Tests Configuration
- * 
+ *
  * テスト設定ファイル
  */
 
