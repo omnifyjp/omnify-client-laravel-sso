@@ -3,25 +3,27 @@
 /**
  * RolePermission Resource
  *
- * SAFE TO EDIT - This file is never overwritten by Omnify.
+ * Custom resource without OmnifyBase dependency.
  */
 
-namespace App\Http\Resources;
+namespace Omnify\SsoClient\Http\Resources;
 
-use App\Http\Resources\OmnifyBase\RolePermissionResourceBase;
 use Illuminate\Http\Request;
+use Illuminate\Http\Resources\Json\JsonResource;
 use OpenApi\Attributes as OA;
 
 #[OA\Schema(
     schema: 'RolePermission',
     description: 'Role Permission',
     properties: [
-        new OA\Property(property: 'id', type: 'integer', example: 1),
+        new OA\Property(property: 'id', type: 'string', example: '019bea70-1234-5678-9abc-def012345678'),
+        new OA\Property(property: 'role_id', type: 'string'),
+        new OA\Property(property: 'permission_id', type: 'string'),
         new OA\Property(property: 'created_at', type: 'string', format: 'date-time'),
         new OA\Property(property: 'updated_at', type: 'string', format: 'date-time'),
     ]
 )]
-class RolePermissionResource extends RolePermissionResourceBase
+class RolePermissionResource extends JsonResource
 {
     /**
      * Transform the resource into an array.
@@ -30,20 +32,14 @@ class RolePermissionResource extends RolePermissionResourceBase
      */
     public function toArray(Request $request): array
     {
-        return array_merge($this->schemaArray($request), [
-            // Custom fields here
-        ]);
-    }
-
-    /**
-     * Get additional data that should be returned with the resource array.
-     *
-     * @return array<string, mixed>
-     */
-    public function with(Request $request): array
-    {
         return [
-            // Additional metadata here
+            'id' => $this->id,
+            'role_id' => $this->role_id,
+            'permission_id' => $this->permission_id,
+            'role' => RoleResource::make($this->whenLoaded('role')),
+            'permission' => PermissionResource::make($this->whenLoaded('permission')),
+            'created_at' => $this->created_at?->toISOString(),
+            'updated_at' => $this->updated_at?->toISOString(),
         ];
     }
 }

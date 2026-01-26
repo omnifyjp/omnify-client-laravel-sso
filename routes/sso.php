@@ -66,6 +66,7 @@ Route::prefix($adminPrefix)
     ->group(function () {
         // Users
         Route::get('users/search', [UserAdminController::class, 'search']);
+        Route::get('users/{user}/permissions', [UserAdminController::class, 'permissions']);
         Route::apiResource('users', UserAdminController::class)->except(['store']);
 
         // Roles

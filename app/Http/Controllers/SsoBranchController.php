@@ -7,6 +7,8 @@ namespace Omnify\SsoClient\Http\Controllers;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controller;
+use Omnify\SsoClient\Models\BranchCache;
+use Omnify\SsoClient\Models\OrganizationCache;
 use Omnify\SsoClient\Services\ConsoleApiService;
 use Omnify\SsoClient\Services\ConsoleTokenService;
 use OpenApi\Attributes as OA;
@@ -124,6 +126,56 @@ class SsoBranchController extends Controller
             ], 500);
         }
 
+        // Auto-cache organization and branches
+        $this->cacheOrganizationAndBranches($result);
+
         return response()->json($result);
+    }
+
+    /**
+     * Auto-cache organization and branches from Console response.
+     *
+     * @param  array{organization?: array{id: int|string, slug: string, name: string}, branches?: array<array{id: int|string, code: string, name: string, is_headquarters: bool}>}  $result
+     */
+    private function cacheOrganizationAndBranches(array $result): void
+    {
+        // Cache organization
+        if (isset($result['organization']) && is_array($result['organization'])) {
+            $org = $result['organization'];
+            $consoleOrgId = (string) ($org['id'] ?? '');
+
+            if ($consoleOrgId) {
+                OrganizationCache::updateOrCreate(
+                    ['console_org_id' => $consoleOrgId],
+                    [
+                        'name' => $org['name'] ?? 'Unknown',
+                        'code' => $org['slug'] ?? $consoleOrgId,
+                        'is_active' => true,
+                    ]
+                );
+            }
+        }
+
+        // Cache branches
+        if (isset($result['branches']) && is_array($result['branches'])) {
+            $consoleOrgId = (string) ($result['organization']['id'] ?? '');
+
+            foreach ($result['branches'] as $branch) {
+                $consoleBranchId = (string) ($branch['id'] ?? '');
+
+                if ($consoleBranchId && $consoleOrgId) {
+                    BranchCache::updateOrCreate(
+                        ['console_branch_id' => $consoleBranchId],
+                        [
+                            'console_org_id' => $consoleOrgId,
+                            'code' => $branch['code'] ?? 'DEFAULT',
+                            'name' => $branch['name'] ?? 'Unknown',
+                            'is_headquarters' => $branch['is_headquarters'] ?? false,
+                            'is_active' => true,
+                        ]
+                    );
+                }
+            }
+        }
     }
 }

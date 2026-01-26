@@ -29,6 +29,7 @@ use Omnify\SsoClient\Models\Role;
  * @property string $name
  * @property string $email
  * @property mixed $console_user_id
+ * @property mixed $console_org_id
  * @property string|null $console_access_token
  * @property string|null $console_refresh_token
  * @property \Carbon\Carbon|null $console_token_expires_at
@@ -86,6 +87,7 @@ class UserCacheBaseModel extends BaseModel
         'name',
         'email',
         'console_user_id',
+        'console_org_id',
         'console_access_token',
         'console_refresh_token',
         'console_token_expires_at',

@@ -9,12 +9,30 @@ displayName:
 options:
   timestamps: true
   idType: Uuid
+  indexes:
+    - columns: [console_org_id]
+    - columns: [console_org_id, name]
+      unique: true
+    - columns: [console_org_id, slug]
+      unique: true
 
 properties:
+  console_org_id:
+    type: String
+    length: 36
+    nullable: true
+    displayName:
+      ja: 組織ID
+      en: Organization ID
+      vi: ID tổ chức
+    description:
+      ja: NULLの場合はグローバルロール
+      en: NULL means global role
+      vi: NULL nghĩa là vai trò toàn hệ thống
+
   name:
     type: String
     length: 100
-    unique: true
     displayName:
       ja: ロール名
       en: Role Name
@@ -23,7 +41,6 @@ properties:
   slug:
     type: String
     length: 100
-    unique: true
     displayName:
       ja: スラッグ
       en: Slug

@@ -7,6 +7,7 @@ namespace Omnify\SsoClient\Http\Middleware;
 use Closure;
 use Illuminate\Http\Request;
 use Omnify\SsoClient\Models\BranchCache;
+use Omnify\SsoClient\Models\OrganizationCache;
 use Omnify\SsoClient\Services\OrgAccessService;
 use Symfony\Component\HttpFoundation\Response;
 
@@ -68,6 +69,16 @@ class SsoOrganizationAccess
         }
 
         $orgId = $access['organization_id'];
+
+        // Auto-cache organization to database
+        OrganizationCache::updateOrCreate(
+            ['console_org_id' => $orgId],
+            [
+                'name' => $access['organization_name'] ?? $access['organization_slug'],
+                'code' => $access['organization_slug'],
+                'is_active' => true,
+            ]
+        );
 
         // Set organization info on request attributes
         $request->attributes->set('orgId', $orgId);

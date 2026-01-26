@@ -29,6 +29,11 @@ class RoleLocales
      * @var array<string, array<string, string>>
      */
     public const PROPERTY_DISPLAY_NAMES = [
+        'console_org_id' => [
+            'ja' => '組織ID',
+            'en' => 'Organization ID',
+            'vi' => 'ID tổ chức',
+        ],
         'name' => [
             'ja' => 'ロール名',
             'en' => 'Role Name',

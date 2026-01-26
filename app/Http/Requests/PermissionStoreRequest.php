@@ -6,9 +6,9 @@
  * SAFE TO EDIT - This file is never overwritten by Omnify.
  */
 
-namespace App\Http\Requests;
+namespace Omnify\SsoClient\Http\Requests;
 
-use App\Http\Requests\OmnifyBase\PermissionStoreRequestBase;
+use Omnify\SsoClient\Http\Requests\OmnifyBase\PermissionStoreRequestBase;
 use OpenApi\Attributes as OA;
 
 #[OA\Schema(

@@ -3,29 +3,28 @@
 /**
  * User Resource
  *
- * SAFE TO EDIT - This file is never overwritten by Omnify.
+ * Custom resource without OmnifyBase dependency.
  */
 
-namespace App\Http\Resources;
+namespace Omnify\SsoClient\Http\Resources;
 
-use App\Http\Resources\OmnifyBase\UserResourceBase;
 use Illuminate\Http\Request;
+use Illuminate\Http\Resources\Json\JsonResource;
 use OpenApi\Attributes as OA;
 
 #[OA\Schema(
     schema: 'User',
     description: 'User',
     properties: [
-        new OA\Property(property: 'id', type: 'integer', example: 1),
+        new OA\Property(property: 'id', type: 'string', example: '019bea70-1234-5678-9abc-def012345678'),
+        new OA\Property(property: 'name', type: 'string'),
+        new OA\Property(property: 'email', type: 'string', format: 'email'),
         new OA\Property(property: 'console_user_id', type: 'string', nullable: true),
-        new OA\Property(property: 'console_access_token', type: 'string', nullable: true),
-        new OA\Property(property: 'console_refresh_token', type: 'string', nullable: true),
-        new OA\Property(property: 'console_token_expires_at', type: 'string', format: 'date-time', nullable: true),
         new OA\Property(property: 'created_at', type: 'string', format: 'date-time'),
         new OA\Property(property: 'updated_at', type: 'string', format: 'date-time'),
     ]
 )]
-class UserResource extends UserResourceBase
+class UserResource extends JsonResource
 {
     /**
      * Transform the resource into an array.
@@ -34,20 +33,14 @@ class UserResource extends UserResourceBase
      */
     public function toArray(Request $request): array
     {
-        return array_merge($this->schemaArray($request), [
-            // Custom fields here
-        ]);
-    }
-
-    /**
-     * Get additional data that should be returned with the resource array.
-     *
-     * @return array<string, mixed>
-     */
-    public function with(Request $request): array
-    {
         return [
-            // Additional metadata here
+            'id' => $this->id,
+            'name' => $this->name,
+            'email' => $this->email,
+            'console_user_id' => $this->console_user_id,
+            'roles' => RoleResource::collection($this->whenLoaded('roles')),
+            'created_at' => $this->created_at?->toISOString(),
+            'updated_at' => $this->updated_at?->toISOString(),
         ];
     }
 }

@@ -11,6 +11,12 @@ displayName:
 options:
   timestamps: true
   idType: Uuid
+  indexes:
+    - columns: [console_org_id]
+    - columns: [email, console_org_id]
+      unique: true
+    - columns: [console_user_id, console_org_id]
+      unique: true
 
 properties:
   # Basic user info (cached from Console)
@@ -23,7 +29,7 @@ properties:
 
   email:
     type: String
-    unique: true
+    # unique per org (see indexes above)
     displayName:
       ja: メールアドレス
       en: Email
@@ -32,7 +38,7 @@ properties:
   # SSO fields
   console_user_id:
     type: Uuid
-    unique: true
+    # unique per org (see indexes above)
     nullable: true
     displayName:
       ja: Console User ID
@@ -42,6 +48,18 @@ properties:
       ja: Console側のユーザーID
       en: User ID from Console SSO
       vi: ID người dùng từ Console SSO
+
+  console_org_id:
+    type: Uuid
+    nullable: true
+    displayName:
+      ja: 所属組織ID
+      en: Organization ID
+      vi: ID Tổ chức
+    description:
+      ja: ユーザーが所属する主要組織のID（Console SSO側）
+      en: Primary organization ID the user belongs to (from Console SSO)
+      vi: ID tổ chức chính mà người dùng thuộc về (từ Console SSO)
 
   console_access_token:
     type: Text

@@ -6,6 +6,8 @@ namespace Omnify\SsoClient\Services;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\Cache;
+use Omnify\SsoClient\Models\OrganizationCache;
+use Omnify\SsoClient\Models\TeamCache;
 
 class OrgAccessService
 {
@@ -54,7 +56,35 @@ class OrgAccessService
             return [];
         }
 
-        return $this->consoleApi->getOrganizations($accessToken);
+        $organizations = $this->consoleApi->getOrganizations($accessToken);
+
+        // Auto-cache organizations to database
+        $this->cacheOrganizations($organizations);
+
+        return $organizations;
+    }
+
+    /**
+     * Auto-cache organizations from Console response.
+     *
+     * @param  array<array{organization_id: string, organization_slug: string, organization_name: string}>  $organizations
+     */
+    private function cacheOrganizations(array $organizations): void
+    {
+        foreach ($organizations as $org) {
+            $consoleOrgId = $org['organization_id'] ?? null;
+
+            if ($consoleOrgId) {
+                OrganizationCache::updateOrCreate(
+                    ['console_org_id' => $consoleOrgId],
+                    [
+                        'name' => $org['organization_name'] ?? 'Unknown',
+                        'code' => $org['organization_slug'] ?? $consoleOrgId,
+                        'is_active' => true,
+                    ]
+                );
+            }
+        }
     }
 
     /**
@@ -76,9 +106,45 @@ class OrgAccessService
                     return [];
                 }
 
-                return $this->consoleApi->getUserTeams($accessToken, $orgSlug);
+                $teams = $this->consoleApi->getUserTeams($accessToken, $orgSlug);
+
+                // Auto-cache teams to database
+                $this->cacheTeams($teams, $orgSlug);
+
+                return $teams;
             }
         );
+    }
+
+    /**
+     * Auto-cache teams from Console response.
+     *
+     * @param  array<array{id: int|string, name: string}>  $teams
+     * @param  string  $orgSlug  Organization slug to find console_org_id
+     */
+    private function cacheTeams(array $teams, string $orgSlug): void
+    {
+        // Get organization by slug to find console_org_id
+        $org = OrganizationCache::where('code', $orgSlug)->first();
+        $consoleOrgId = $org?->console_org_id;
+
+        if (! $consoleOrgId) {
+            return;
+        }
+
+        foreach ($teams as $team) {
+            $consoleTeamId = (string) ($team['id'] ?? '');
+
+            if ($consoleTeamId) {
+                TeamCache::updateOrCreate(
+                    ['console_team_id' => $consoleTeamId],
+                    [
+                        'console_org_id' => $consoleOrgId,
+                        'name' => $team['name'] ?? 'Unknown Team',
+                    ]
+                );
+            }
+        }
     }
 
     /**

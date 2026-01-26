@@ -24,16 +24,18 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('user_caches', function (Blueprint $table) {
+        Schema::create('roles', function (Blueprint $table) {
             $table->uuid('id')->primary();
-            $table->string('name')->comment('Name');
-            $table->string('email')->unique()->comment('Email');
-            $table->uuid('console_user_id')->nullable()->unique()->comment('Console User ID');
-            $table->text('console_access_token')->nullable()->comment('Console Access Token');
-            $table->text('console_refresh_token')->nullable()->comment('Console Refresh Token');
-            $table->timestamp('console_token_expires_at')->nullable()->comment('Console Token Expiry');
+            $table->string('console_org_id', 36)->nullable()->comment('Organization ID');
+            $table->string('name', 100)->comment('Role Name');
+            $table->string('slug', 100)->comment('Slug');
+            $table->text('description')->nullable()->comment('Description');
+            $table->integer('level')->default(0)->comment('Level');
             $table->timestamp('created_at')->nullable();
             $table->timestamp('updated_at')->nullable();
+            $table->index('console_org_id');
+            $table->unique(['console_org_id', 'name']);
+            $table->unique(['console_org_id', 'slug']);
         });
     }
 
@@ -42,6 +44,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('user_caches');
+        Schema::dropIfExists('roles');
     }
 };

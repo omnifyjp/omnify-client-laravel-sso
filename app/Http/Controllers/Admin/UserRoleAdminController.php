@@ -180,14 +180,22 @@ class UserRoleAdminController extends Controller
         $orgId = $request->validated('console_org_id');
         $branchId = $request->validated('console_branch_id');
 
-        // Check if assignment already exists
-        $exists = $user->roles()
-            ->where('roles.id', $role->id)
-            ->wherePivot('console_org_id', $orgId)
-            ->wherePivot('console_branch_id', $branchId)
-            ->exists();
+        // Check if assignment already exists (handle NULL values properly)
+        $query = $user->roles()->where('roles.id', $role->id);
 
-        if ($exists) {
+        if ($orgId === null) {
+            $query->wherePivotNull('console_org_id');
+        } else {
+            $query->wherePivot('console_org_id', $orgId);
+        }
+
+        if ($branchId === null) {
+            $query->wherePivotNull('console_branch_id');
+        } else {
+            $query->wherePivot('console_branch_id', $branchId);
+        }
+
+        if ($query->exists()) {
             return response()->json([
                 'error' => 'DUPLICATE_ASSIGNMENT',
                 'message' => 'This role assignment already exists with the same scope',

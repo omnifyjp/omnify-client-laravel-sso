@@ -3,20 +3,20 @@
 /**
  * Permission Resource
  *
- * SAFE TO EDIT - This file is never overwritten by Omnify.
+ * Custom resource without OmnifyBase dependency.
  */
 
-namespace App\Http\Resources;
+namespace Omnify\SsoClient\Http\Resources;
 
-use App\Http\Resources\OmnifyBase\PermissionResourceBase;
 use Illuminate\Http\Request;
+use Illuminate\Http\Resources\Json\JsonResource;
 use OpenApi\Attributes as OA;
 
 #[OA\Schema(
     schema: 'Permission',
     description: 'Permission',
     properties: [
-        new OA\Property(property: 'id', type: 'integer', example: 1),
+        new OA\Property(property: 'id', type: 'string', example: '019bea70-1234-5678-9abc-def012345678'),
         new OA\Property(property: 'name', type: 'string', maxLength: 100),
         new OA\Property(property: 'slug', type: 'string', maxLength: 100),
         new OA\Property(property: 'group', type: 'string', maxLength: 50, nullable: true),
@@ -24,7 +24,7 @@ use OpenApi\Attributes as OA;
         new OA\Property(property: 'updated_at', type: 'string', format: 'date-time'),
     ]
 )]
-class PermissionResource extends PermissionResourceBase
+class PermissionResource extends JsonResource
 {
     /**
      * Transform the resource into an array.
@@ -33,20 +33,13 @@ class PermissionResource extends PermissionResourceBase
      */
     public function toArray(Request $request): array
     {
-        return array_merge($this->schemaArray($request), [
-            // Custom fields here
-        ]);
-    }
-
-    /**
-     * Get additional data that should be returned with the resource array.
-     *
-     * @return array<string, mixed>
-     */
-    public function with(Request $request): array
-    {
         return [
-            // Additional metadata here
+            'id' => $this->id,
+            'name' => $this->name,
+            'slug' => $this->slug,
+            'group' => $this->group,
+            'created_at' => $this->created_at?->toISOString(),
+            'updated_at' => $this->updated_at?->toISOString(),
         ];
     }
 }

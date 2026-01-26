@@ -26,6 +26,7 @@ use Omnify\SsoClient\Models\Permission;
 /**
  * RoleBaseModel
  *
+ * @property string|null $console_org_id
  * @property string $name
  * @property string $slug
  * @property string|null $description
@@ -81,6 +82,7 @@ class RoleBaseModel extends BaseModel
      * The attributes that are mass assignable.
      */
     protected $fillable = [
+        'console_org_id',
         'name',
         'slug',
         'description',

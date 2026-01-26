@@ -118,11 +118,18 @@ class SsoCallbackController extends Controller
         // Get organizations
         $organizations = $this->orgAccessService->getOrganizations($user);
 
+        // Save primary organization to user (first org or existing)
+        if (! $user->console_org_id && ! empty($organizations)) {
+            $user->console_org_id = $organizations[0]['organization_id'] ?? null;
+            $user->save();
+        }
+
         // Create authentication response
         $response = [
             'user' => [
                 'id' => $user->id,
                 'console_user_id' => $user->console_user_id,
+                'console_org_id' => $user->console_org_id,
                 'email' => $user->email,
                 'name' => $user->name,
             ],
@@ -227,6 +234,7 @@ class SsoCallbackController extends Controller
             'user' => [
                 'id' => $user->id,
                 'console_user_id' => $user->console_user_id,
+                'console_org_id' => $user->console_org_id,
                 'email' => $user->email,
                 'name' => $user->name,
             ],

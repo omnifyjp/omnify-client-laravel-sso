@@ -17,13 +17,27 @@ use OpenApi\Attributes as OA;
 class RoleAdminController extends Controller
 {
     /**
-     * List all roles.
+     * List all roles for the current organization.
      */
     #[OA\Get(
         path: '/api/admin/sso/roles',
         summary: 'List all roles',
         tags: ['SSO Roles'],
         security: [['sanctum' => []]],
+        parameters: [
+            new OA\Parameter(
+                name: 'filter[scope]',
+                in: 'query',
+                description: 'Filter by scope: global (null org), org (current org only), all (both)',
+                schema: new OA\Schema(type: 'string', enum: ['global', 'org', 'all'])
+            ),
+            new OA\Parameter(
+                name: 'filter[org_id]',
+                in: 'query',
+                description: 'Filter by specific organization ID',
+                schema: new OA\Schema(type: 'string')
+            ),
+        ],
         responses: [
             new OA\Response(
                 response: 200,
@@ -36,11 +50,47 @@ class RoleAdminController extends Controller
             ),
         ]
     )]
-    public function index(): JsonResponse
+    public function index(Request $request): JsonResponse
     {
-        $roles = Role::withCount('permissions')
-            ->orderBy('level', 'desc')
-            ->get();
+        $orgId = $request->header('X-Org-Id');
+        $scope = $request->input('filter.scope', 'all');
+        $filterOrgId = $request->input('filter.org_id');
+
+        $query = Role::withCount('permissions');
+
+        // Apply scope filter
+        if ($scope === 'global') {
+            $query->whereNull('console_org_id');
+        } elseif ($scope === 'org') {
+            $query->where('console_org_id', $filterOrgId ?: $orgId);
+        } else {
+            // 'all' - include global + current org roles
+            $query->where(function ($q) use ($orgId, $filterOrgId) {
+                $q->whereNull('console_org_id');
+                if ($filterOrgId) {
+                    $q->orWhere('console_org_id', $filterOrgId);
+                } elseif ($orgId) {
+                    $q->orWhere('console_org_id', $orgId);
+                }
+            });
+        }
+
+        $roles = $query->orderBy('level', 'desc')->get();
+
+        // Add organization info for each role
+        $roles->each(function ($role) {
+            if ($role->console_org_id) {
+                $org = \Omnify\SsoClient\Models\OrganizationCache::where('console_org_id', $role->console_org_id)->first();
+                $role->organization = $org ? [
+                    'id' => $org->id,
+                    'console_org_id' => $org->console_org_id,
+                    'name' => $org->name,
+                    'code' => $org->code,
+                ] : null;
+            } else {
+                $role->organization = null;
+            }
+        });
 
         return response()->json([
             'data' => $roles,
@@ -64,6 +114,8 @@ class RoleAdminController extends Controller
                     new OA\Property(property: 'name', type: 'string', maxLength: 100, example: 'Editor'),
                     new OA\Property(property: 'level', type: 'integer', minimum: 0, maximum: 100, example: 50),
                     new OA\Property(property: 'description', type: 'string', nullable: true),
+                    new OA\Property(property: 'scope', type: 'string', enum: ['global', 'org'], example: 'org', description: 'Role scope: global (system-wide) or org (organization-specific)'),
+                    new OA\Property(property: 'console_org_id', type: 'string', nullable: true, description: 'Organization ID for org-scoped roles'),
                 ]
             )
         ),
@@ -74,14 +126,45 @@ class RoleAdminController extends Controller
     )]
     public function store(Request $request): JsonResponse
     {
+        $headerOrgId = $request->header('X-Org-Id');
+
         $validated = $request->validate([
-            'slug' => ['required', 'string', 'max:100', 'unique:roles,slug'],
+            'slug' => ['required', 'string', 'max:100'],
             'name' => ['required', 'string', 'max:100'],
             'level' => ['required', 'integer', 'min:0', 'max:100'],
             'description' => ['nullable', 'string'],
+            'scope' => ['nullable', 'string', 'in:global,org'],
+            'console_org_id' => ['nullable', 'string', 'max:36'],
         ]);
 
-        $role = Role::create($validated);
+        // Determine org_id based on scope
+        $scope = $validated['scope'] ?? 'org';
+        $orgId = $scope === 'global' ? null : ($validated['console_org_id'] ?? $headerOrgId);
+
+        // Check unique constraint within scope (global or org)
+        $existingRole = Role::where('console_org_id', $orgId)
+            ->where(function ($query) use ($validated) {
+                $query->where('slug', $validated['slug'])
+                    ->orWhere('name', $validated['name']);
+            })
+            ->first();
+
+        if ($existingRole) {
+            return response()->json([
+                'error' => 'DUPLICATE_ROLE',
+                'message' => $orgId
+                    ? 'A role with this name or slug already exists in this organization'
+                    : 'A global role with this name or slug already exists',
+            ], 422);
+        }
+
+        $role = Role::create([
+            'slug' => $validated['slug'],
+            'name' => $validated['name'],
+            'level' => $validated['level'],
+            'description' => $validated['description'] ?? null,
+            'console_org_id' => $orgId,
+        ]);
 
         return response()->json([
             'data' => $role,
@@ -103,9 +186,17 @@ class RoleAdminController extends Controller
             new OA\Response(response: 404, description: 'Role not found'),
         ]
     )]
-    public function show(string $id): JsonResponse
+    public function show(Request $request, string $id): JsonResponse
     {
-        $role = Role::with('permissions')->findOrFail($id);
+        $orgId = $request->header('X-Org-Id');
+
+        $role = Role::with('permissions')
+            ->where('id', $id)
+            ->where(function ($query) use ($orgId) {
+                $query->whereNull('console_org_id')
+                    ->orWhere('console_org_id', $orgId);
+            })
+            ->firstOrFail();
 
         return response()->json([
             'data' => $role,
@@ -138,7 +229,14 @@ class RoleAdminController extends Controller
     )]
     public function update(Request $request, string $id): JsonResponse
     {
-        $role = Role::findOrFail($id);
+        $orgId = $request->header('X-Org-Id');
+
+        $role = Role::where('id', $id)
+            ->where(function ($query) use ($orgId) {
+                $query->whereNull('console_org_id')
+                    ->orWhere('console_org_id', $orgId);
+            })
+            ->firstOrFail();
 
         $validated = $request->validate([
             'name' => ['sometimes', 'string', 'max:100'],
@@ -175,16 +273,23 @@ class RoleAdminController extends Controller
             new OA\Response(response: 422, description: 'Cannot delete system role'),
         ]
     )]
-    public function destroy(string $id): JsonResponse
+    public function destroy(Request $request, string $id): JsonResponse
     {
-        $role = Role::findOrFail($id);
+        $orgId = $request->header('X-Org-Id');
 
-        // Check if it's a system role
+        $role = Role::where('id', $id)
+            ->where(function ($query) use ($orgId) {
+                $query->whereNull('console_org_id')
+                    ->orWhere('console_org_id', $orgId);
+            })
+            ->firstOrFail();
+
+        // Check if it's a global system role (org_id = null)
         $systemRoles = ['admin', 'manager', 'member'];
-        if (in_array($role->slug, $systemRoles, true)) {
+        if ($role->console_org_id === null && in_array($role->slug, $systemRoles, true)) {
             return response()->json([
                 'error' => 'CANNOT_DELETE_SYSTEM_ROLE',
-                'message' => 'System roles cannot be deleted',
+                'message' => 'Global system roles cannot be deleted',
             ], 422);
         }
 
@@ -219,9 +324,17 @@ class RoleAdminController extends Controller
             new OA\Response(response: 404, description: 'Role not found'),
         ]
     )]
-    public function permissions(string $id): JsonResponse
+    public function permissions(Request $request, string $id): JsonResponse
     {
-        $role = Role::with('permissions')->findOrFail($id);
+        $orgId = $request->header('X-Org-Id');
+
+        $role = Role::with('permissions')
+            ->where('id', $id)
+            ->where(function ($query) use ($orgId) {
+                $query->whereNull('console_org_id')
+                    ->orWhere('console_org_id', $orgId);
+            })
+            ->firstOrFail();
 
         return response()->json([
             'role' => [
@@ -268,7 +381,14 @@ class RoleAdminController extends Controller
     )]
     public function syncPermissions(Request $request, string $id): JsonResponse
     {
-        $role = Role::findOrFail($id);
+        $orgId = $request->header('X-Org-Id');
+
+        $role = Role::where('id', $id)
+            ->where(function ($query) use ($orgId) {
+                $query->whereNull('console_org_id')
+                    ->orWhere('console_org_id', $orgId);
+            })
+            ->firstOrFail();
 
         $validated = $request->validate([
             'permissions' => ['required', 'array'],

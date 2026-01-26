@@ -14,6 +14,10 @@ const config: OmnifyConfig = {
       baseModelNamespace: "Omnify\\SsoClient\\Models\\OmnifyBase",
       modelsPath: "app/Models",
       baseModelsPath: "app/Models/OmnifyBase",
+      // Disable resources and requests generation - this package uses custom resources
+      // to avoid namespace conflicts (App\Http\Resources vs Omnify\SsoClient\Http\Resources)
+      generateResources: false,
+      generateRequests: false,
     }),
   ],
   locale: {

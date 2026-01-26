@@ -44,6 +44,11 @@ class UserCacheLocales
             'en' => 'Console User ID',
             'vi' => 'Console User ID',
         ],
+        'console_org_id' => [
+            'ja' => '所属組織ID',
+            'en' => 'Organization ID',
+            'vi' => 'ID Tổ chức',
+        ],
         'console_access_token' => [
             'ja' => 'Console Access Token',
             'en' => 'Console Access Token',

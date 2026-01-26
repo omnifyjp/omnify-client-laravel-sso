@@ -188,13 +188,30 @@ class UserCache extends UserCacheBaseModel implements AuthenticatableContract, A
     {
         $role = $this->resolveRole($role);
 
-        // Use syncWithoutDetaching to handle duplicates gracefully
-        // This will update existing pivot data or insert if not exists
-        $this->roles()->syncWithoutDetaching([
-            $role->id => [
-                'console_org_id' => $orgId,
-                'console_branch_id' => $branchId,
-            ],
+        // Check if exact assignment already exists (same role + same scope)
+        // Use whereNull for NULL values to handle SQL NULL comparison correctly
+        $query = $this->roles()->where('roles.id', $role->id);
+
+        if ($orgId === null) {
+            $query->wherePivotNull('console_org_id');
+        } else {
+            $query->wherePivot('console_org_id', $orgId);
+        }
+
+        if ($branchId === null) {
+            $query->wherePivotNull('console_branch_id');
+        } else {
+            $query->wherePivot('console_branch_id', $branchId);
+        }
+
+        if ($query->exists()) {
+            return; // Already assigned with this exact scope
+        }
+
+        // Use attach to allow multiple assignments with different scopes
+        $this->roles()->attach($role->id, [
+            'console_org_id' => $orgId,
+            'console_branch_id' => $branchId,
         ]);
     }
 
@@ -220,10 +237,24 @@ class UserCache extends UserCacheBaseModel implements AuthenticatableContract, A
     {
         $role = $this->resolveRole($role);
 
-        return $this->roles()
-            ->wherePivot('console_org_id', $orgId)
-            ->wherePivot('console_branch_id', $branchId)
-            ->detach($role->id);
+        // Use DB query to handle NULL values correctly
+        $query = \DB::table('role_user_cache')
+            ->where('user_cach_id', $this->id)
+            ->where('role_id', $role->id);
+
+        if ($orgId === null) {
+            $query->whereNull('console_org_id');
+        } else {
+            $query->where('console_org_id', $orgId);
+        }
+
+        if ($branchId === null) {
+            $query->whereNull('console_branch_id');
+        } else {
+            $query->where('console_branch_id', $branchId);
+        }
+
+        return $query->delete();
     }
 
     /**
@@ -242,22 +273,23 @@ class UserCache extends UserCacheBaseModel implements AuthenticatableContract, A
      */
     public function removeRolesInScope(?string $orgId = null, ?string $branchId = null): int
     {
-        $query = $this->roles()
-            ->wherePivot('console_org_id', $orgId)
-            ->wherePivot('console_branch_id', $branchId);
+        // Use DB query to handle NULL values correctly
+        $query = \DB::table('role_user_cache')
+            ->where('user_cach_id', $this->id);
 
-        $roleIds = $query->pluck('roles.id')->toArray();
-
-        if (empty($roleIds)) {
-            return 0;
+        if ($orgId === null) {
+            $query->whereNull('console_org_id');
+        } else {
+            $query->where('console_org_id', $orgId);
         }
 
-        // Need to detach by matching the exact scope
-        return \DB::table('role_user_cache')
-            ->where('user_cach_id', $this->id)
-            ->where('console_org_id', $orgId)
-            ->where('console_branch_id', $branchId)
-            ->delete();
+        if ($branchId === null) {
+            $query->whereNull('console_branch_id');
+        } else {
+            $query->where('console_branch_id', $branchId);
+        }
+
+        return $query->delete();
     }
 
     /**

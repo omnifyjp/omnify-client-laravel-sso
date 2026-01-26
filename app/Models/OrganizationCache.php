@@ -3,6 +3,7 @@
 namespace Omnify\SsoClient\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Omnify\SsoClient\Events\OrganizationCacheCreated;
 use Omnify\SsoClient\Models\OmnifyBase\OrganizationCacheBaseModel;
 
 /**
@@ -13,6 +14,15 @@ use Omnify\SsoClient\Models\OmnifyBase\OrganizationCacheBaseModel;
 class OrganizationCache extends OrganizationCacheBaseModel
 {
     use HasFactory;
+
+    /**
+     * The event map for the model.
+     *
+     * @var array<string, string>
+     */
+    protected $dispatchesEvents = [
+        'created' => OrganizationCacheCreated::class,
+    ];
 
     protected static function newFactory(): \Omnify\SsoClient\Database\Factories\OrganizationCacheFactory
     {
