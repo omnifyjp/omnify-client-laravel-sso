@@ -24,21 +24,21 @@ class OrgAccessService
      *
      * @return array{organization_id: string, organization_slug: string, org_role: string, service_role: string|null, service_role_level: int}|null
      */
-    public function checkAccess(Model $user, string $orgSlug): ?array
+    public function checkAccess(Model $user, string $orgId): ?array
     {
-        $cacheKey = $this->getCacheKey($user->console_user_id, $orgSlug);
+        $cacheKey = $this->getCacheKey($user->console_user_id, $orgId);
 
         return Cache::remember(
             $cacheKey,
             $this->cacheTtl,
-            function () use ($user, $orgSlug) {
+            function () use ($user, $orgId) {
                 $accessToken = $this->tokenService->getAccessToken($user);
 
                 if (! $accessToken) {
                     return null;
                 }
 
-                return $this->consoleApi->getAccess($accessToken, $orgSlug);
+                return $this->consoleApi->getAccess($accessToken, $orgId);
             }
         );
     }
@@ -92,24 +92,24 @@ class OrgAccessService
      *
      * @return array<array{id: int, name: string, path: string|null, parent_id: int|null, is_leader: bool}>
      */
-    public function getUserTeams(Model $user, string $orgSlug): array
+    public function getUserTeams(Model $user, string $orgId): array
     {
-        $cacheKey = "sso:user_teams:{$user->id}:{$orgSlug}";
+        $cacheKey = "sso:user_teams:{$user->id}:{$orgId}";
 
         return Cache::remember(
             $cacheKey,
             config('sso-client.cache.user_teams_ttl', 300),
-            function () use ($user, $orgSlug) {
+            function () use ($user, $orgId) {
                 $accessToken = $this->tokenService->getAccessToken($user);
 
                 if (! $accessToken) {
                     return [];
                 }
 
-                $teams = $this->consoleApi->getUserTeams($accessToken, $orgSlug);
+                $teams = $this->consoleApi->getUserTeams($accessToken, $orgId);
 
                 // Auto-cache teams to database
-                $this->cacheTeams($teams, $orgSlug);
+                $this->cacheTeams($teams, $orgId);
 
                 return $teams;
             }
@@ -120,12 +120,12 @@ class OrgAccessService
      * Auto-cache teams from Console response.
      *
      * @param  array<array{id: int|string, name: string}>  $teams
-     * @param  string  $orgSlug  Organization slug to find console_org_id
+     * @param  string  $orgId  Organization slug to find console_org_id
      */
-    private function cacheTeams(array $teams, string $orgSlug): void
+    private function cacheTeams(array $teams, string $orgId): void
     {
         // Get organization by slug to find console_org_id
-        $org = OrganizationCache::where('code', $orgSlug)->first();
+        $org = OrganizationCache::where('code', $orgId)->first();
         $consoleOrgId = $org?->console_org_id;
 
         if (! $consoleOrgId) {
@@ -150,10 +150,10 @@ class OrgAccessService
     /**
      * Clear access cache for user/org.
      */
-    public function clearCache(int|string $consoleUserId, ?string $orgSlug = null): void
+    public function clearCache(int|string $consoleUserId, ?string $orgId = null): void
     {
-        if ($orgSlug) {
-            Cache::forget($this->getCacheKey($consoleUserId, $orgSlug));
+        if ($orgId) {
+            Cache::forget($this->getCacheKey($consoleUserId, $orgId));
         }
         // Note: For clearing all orgs for a user, we would need cache tags
         // which requires a cache driver that supports tags (Redis, Memcached)
@@ -162,18 +162,18 @@ class OrgAccessService
     /**
      * Clear teams cache for user.
      */
-    public function clearTeamsCache(int|string $userId, ?string $orgSlug = null): void
+    public function clearTeamsCache(int|string $userId, ?string $orgId = null): void
     {
-        if ($orgSlug) {
-            Cache::forget("sso:user_teams:{$userId}:{$orgSlug}");
+        if ($orgId) {
+            Cache::forget("sso:user_teams:{$userId}:{$orgId}");
         }
     }
 
     /**
      * Get cache key for org access.
      */
-    private function getCacheKey(int|string $consoleUserId, string $orgSlug): string
+    private function getCacheKey(int|string $consoleUserId, string $orgId): string
     {
-        return self::CACHE_KEY_PREFIX.":{$consoleUserId}:{$orgSlug}";
+        return self::CACHE_KEY_PREFIX.":{$consoleUserId}:{$orgId}";
     }
 }

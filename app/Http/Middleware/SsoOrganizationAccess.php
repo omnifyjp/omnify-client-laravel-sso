@@ -15,7 +15,7 @@ use Symfony\Component\HttpFoundation\Response;
  * Middleware for organization and branch context.
  *
  * Sets organization and branch context from headers:
- * - X-Org-Id (required): Organization slug
+ * - X-Organization-Id (required): Organization slug
  * - X-Branch-Id (optional): Branch UUID for branch-specific operations
  *
  * Branch context enables branch-level permissions (Option B - Scoped Role Assignments).
@@ -32,7 +32,7 @@ class SsoOrganizationAccess
      * Handle an incoming request.
      *
      * Sets request attributes and session for org/branch context:
-     * - orgId, orgSlug, orgRole, serviceRole, serviceRoleLevel (from Console)
+     * - orgId, orgId, orgRole, serviceRole, serviceRoleLevel (from Console)
      * - branchId (from X-Branch-Id header, validated against organization)
      *
      * @param  \Closure(Request): Response  $next
@@ -40,12 +40,12 @@ class SsoOrganizationAccess
     public function handle(Request $request, Closure $next): Response
     {
         // Get organization from header
-        $orgSlug = $request->header('X-Org-Id');
+        $orgId = $request->header('X-Organization-Id');
 
-        if (! $orgSlug) {
+        if (! $orgId) {
             return response()->json([
                 'error' => 'MISSING_ORGANIZATION',
-                'message' => 'X-Org-Id header is required',
+                'message' => 'X-Organization-Id header is required',
             ], 400);
         }
 
@@ -59,7 +59,7 @@ class SsoOrganizationAccess
         }
 
         // Check organization access
-        $access = $this->orgAccessService->checkAccess($user, $orgSlug);
+        $access = $this->orgAccessService->checkAccess($user, $orgId);
 
         if (! $access) {
             return response()->json([
@@ -82,7 +82,7 @@ class SsoOrganizationAccess
 
         // Set organization info on request attributes
         $request->attributes->set('orgId', $orgId);
-        $request->attributes->set('orgSlug', $access['organization_slug']);
+        $request->attributes->set('orgId', $access['organization_slug']);
         $request->attributes->set('orgRole', $access['org_role']);
         $request->attributes->set('serviceRole', $access['service_role']);
         $request->attributes->set('serviceRoleLevel', $access['service_role_level']);
@@ -90,7 +90,7 @@ class SsoOrganizationAccess
         // Store in session for later use
         session([
             'current_org_id' => $orgId,
-            'current_org_slug' => $access['organization_slug'],
+            'current_org_id' => $access['organization_slug'],
             'service_role' => $access['service_role'],
         ]);
 
@@ -144,7 +144,7 @@ class SsoOrganizationAccess
         // Also set as request properties for convenience
         $request->merge([
             '_org_id' => $orgId,
-            '_org_slug' => $access['organization_slug'],
+            '_org_id' => $access['organization_slug'],
             '_branch_id' => $branchId,
         ]);
 

@@ -68,11 +68,11 @@ class TeamPermissionAdminController extends Controller
     public function index(Request $request): JsonResponse
     {
         $user = $request->user();
-        $orgSlug = $request->attributes->get('orgSlug');
+        $orgId = $request->attributes->get('orgId');
         $orgId = $request->attributes->get('orgId');
 
         // Get teams from Console
-        $teams = $this->orgAccessService->getUserTeams($user, $orgSlug);
+        $teams = $this->orgAccessService->getUserTeams($user, $orgId);
 
         // Get team permissions from DB
         $teamIds = collect($teams)->pluck('id')->toArray();
@@ -371,11 +371,11 @@ class TeamPermissionAdminController extends Controller
     public function orphaned(Request $request): JsonResponse
     {
         $user = $request->user();
-        $orgSlug = $request->attributes->get('orgSlug');
+        $orgId = $request->attributes->get('orgId');
         $orgId = $request->attributes->get('orgId');
 
         // Get current teams from Console
-        $teams = $this->orgAccessService->getUserTeams($user, $orgSlug);
+        $teams = $this->orgAccessService->getUserTeams($user, $orgId);
         $activeTeamIds = collect($teams)->pluck('id')->toArray();
 
         // Find orphaned (team IDs in DB but not in Console, or already soft-deleted)

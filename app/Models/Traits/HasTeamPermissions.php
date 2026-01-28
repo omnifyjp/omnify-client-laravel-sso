@@ -216,13 +216,13 @@ trait HasTeamPermissions
             $cacheKey,
             config('sso-client.cache.user_teams_ttl', 300),
             function () use ($orgId) {
-                $orgSlug = $this->getOrgSlugById($orgId);
+                $orgId = $this->getOrgSlugById($orgId);
 
-                if (! $orgSlug) {
+                if (! $orgId) {
                     return [];
                 }
 
-                return app(OrgAccessService::class)->getUserTeams($this, $orgSlug);
+                return app(OrgAccessService::class)->getUserTeams($this, $orgId);
             }
         );
     }
@@ -252,13 +252,13 @@ trait HasTeamPermissions
     protected function getOrgSlugById(string|int $orgId): ?string
     {
         // Try to get from session
-        $orgSlug = session('current_org_slug');
+        $orgId = session('current_org_id');
 
-        if ($orgSlug) {
-            return $orgSlug;
+        if ($orgId) {
+            return $orgId;
         }
 
         // Try to get from request
-        return request()->attributes->get('orgSlug');
+        return request()->attributes->get('orgId');
     }
 }

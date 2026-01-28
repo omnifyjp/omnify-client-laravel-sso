@@ -16,8 +16,7 @@ trait HasLocalizedDisplayName
     /**
      * Get the localized display name for this model.
      *
-     * @param string|null $locale Locale code (defaults to app locale)
-     * @return string
+     * @param  string|null  $locale  Locale code (defaults to app locale)
      */
     public static function displayName(?string $locale = null): string
     {
@@ -43,9 +42,8 @@ trait HasLocalizedDisplayName
     /**
      * Get the localized display name for a property.
      *
-     * @param string $property Property name
-     * @param string|null $locale Locale code (defaults to app locale)
-     * @return string
+     * @param  string  $property  Property name
+     * @param  string|null  $locale  Locale code (defaults to app locale)
      */
     public static function propertyDisplayName(string $property, ?string $locale = null): string
     {
@@ -61,7 +59,7 @@ trait HasLocalizedDisplayName
     /**
      * Get all localized display names for a property.
      *
-     * @param string $property Property name
+     * @param  string  $property  Property name
      * @return array<string, string>
      */
     public static function allPropertyDisplayNames(string $property): array
@@ -72,7 +70,7 @@ trait HasLocalizedDisplayName
     /**
      * Get all property display names for a given locale.
      *
-     * @param string|null $locale Locale code (defaults to app locale)
+     * @param  string|null  $locale  Locale code (defaults to app locale)
      * @return array<string, string>
      */
     public static function allPropertyDisplayNamesForLocale(?string $locale = null): array

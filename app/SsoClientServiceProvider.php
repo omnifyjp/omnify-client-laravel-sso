@@ -20,6 +20,10 @@ use Omnify\SsoClient\Services\ConsoleTokenService;
 use Omnify\SsoClient\Services\JwksService;
 use Omnify\SsoClient\Services\JwtVerifier;
 use Omnify\SsoClient\Services\OrgAccessService;
+use Omnify\SsoClient\Services\PermissionService;
+use Omnify\SsoClient\Services\RoleService;
+use Omnify\SsoClient\Services\UserRoleService;
+use Omnify\SsoClient\Services\UserService;
 use Omnify\SsoClient\Support\SsoLogger;
 
 class SsoClientServiceProvider extends ServiceProvider
@@ -81,6 +85,12 @@ class SsoClientServiceProvider extends ServiceProvider
         $this->app->singleton('sso.logger', function ($app) {
             return $app->make(SsoLogger::class);
         });
+
+        // Register Access Management Services
+        $this->app->singleton(UserService::class);
+        $this->app->singleton(RoleService::class);
+        $this->app->singleton(PermissionService::class);
+        $this->app->singleton(UserRoleService::class);
     }
 
     /**
@@ -186,7 +196,13 @@ class SsoClientServiceProvider extends ServiceProvider
      */
     protected function registerRoutes(): void
     {
+        // API routes (sso auth, admin)
         $this->loadRoutesFrom(__DIR__.'/../routes/sso.php');
+
+        // Access management pages (Inertia)
+        if (config('sso-client.routes.access_enabled', true)) {
+            $this->loadRoutesFrom(__DIR__.'/../routes/access.php');
+        }
     }
 
     /**

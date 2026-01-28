@@ -7,13 +7,18 @@ namespace Omnify\SsoClient\Http\Controllers\Admin;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controller;
+use Omnify\SsoClient\Http\Resources\PermissionResource;
 use Omnify\SsoClient\Models\Permission;
-use Omnify\SsoClient\Models\Role;
+use Omnify\SsoClient\Services\PermissionService;
 use OpenApi\Attributes as OA;
 
 #[OA\Tag(name: 'SSO Permissions', description: 'Permission management endpoints')]
 class PermissionAdminController extends Controller
 {
+    public function __construct(
+        private PermissionService $permissionService
+    ) {}
+
     /**
      * List all permissions.
      */
@@ -23,57 +28,18 @@ class PermissionAdminController extends Controller
         tags: ['SSO Permissions'],
         security: [['sanctum' => []]],
         parameters: [
-            new OA\Parameter(name: 'group', in: 'query', schema: new OA\Schema(type: 'string'), description: 'Filter by group'),
-            new OA\Parameter(name: 'search', in: 'query', schema: new OA\Schema(type: 'string'), description: 'Search by slug or name'),
-            new OA\Parameter(name: 'grouped', in: 'query', schema: new OA\Schema(type: 'boolean'), description: 'Return grouped by group'),
+            new OA\Parameter(name: 'filter[search]', in: 'query', description: 'Search by name or slug', schema: new OA\Schema(type: 'string')),
+            new OA\Parameter(name: 'filter[group]', in: 'query', description: 'Filter by group', schema: new OA\Schema(type: 'string')),
         ],
-        responses: [
-            new OA\Response(
-                response: 200,
-                description: 'Permissions list',
-                content: new OA\JsonContent(
-                    properties: [
-                        new OA\Property(property: 'data', type: 'array', items: new OA\Items(ref: '#/components/schemas/Permission')),
-                        new OA\Property(property: 'groups', type: 'array', items: new OA\Items(type: 'string')),
-                    ]
-                )
-            ),
-        ]
+        responses: [new OA\Response(response: 200, description: 'Permissions list with groups')]
     )]
-    public function index(Request $request): JsonResponse
+    public function index(): JsonResponse
     {
-        $query = Permission::withCount('roles');
-
-        // Filter by group
-        if ($request->has('group')) {
-            $query->where('group', $request->query('group'));
-        }
-
-        // Search
-        if ($request->has('search')) {
-            $search = $request->query('search');
-            $query->where(function ($q) use ($search) {
-                $q->where('slug', 'like', "%{$search}%")
-                    ->orWhere('name', 'like', "%{$search}%");
-            });
-        }
-
-        // Check if grouped response is requested
-        if ($request->boolean('grouped')) {
-            $permissions = $query->orderBy('group')->orderBy('slug')->get();
-
-            $grouped = $permissions->groupBy('group')->map(fn ($items) => $items->values());
-
-            return response()->json($grouped);
-        }
-
-        $permissions = $query->orderBy('group')->orderBy('slug')->get();
-
-        // Get unique groups
-        $groups = Permission::distinct()->pluck('group')->filter()->values();
+        $permissions = $this->permissionService->list();
+        $groups = $this->permissionService->getGroups();
 
         return response()->json([
-            'data' => $permissions,
+            'data' => PermissionResource::collection($permissions),
             'groups' => $groups,
         ]);
     }
@@ -86,37 +52,32 @@ class PermissionAdminController extends Controller
         summary: 'Create a new permission',
         tags: ['SSO Permissions'],
         security: [['sanctum' => []]],
-        requestBody: new OA\RequestBody(
-            required: true,
-            content: new OA\JsonContent(
-                required: ['slug', 'name'],
-                properties: [
-                    new OA\Property(property: 'slug', type: 'string', maxLength: 100, example: 'reports.export'),
-                    new OA\Property(property: 'name', type: 'string', maxLength: 100, example: 'Export Reports'),
-                    new OA\Property(property: 'group', type: 'string', maxLength: 50, nullable: true, example: 'reports'),
-                    new OA\Property(property: 'description', type: 'string', nullable: true),
-                ]
-            )
-        ),
         responses: [
-            new OA\Response(response: 201, description: 'Permission created', content: new OA\JsonContent(ref: '#/components/schemas/Permission')),
+            new OA\Response(response: 201, description: 'Permission created'),
             new OA\Response(response: 422, description: 'Validation error'),
         ]
     )]
     public function store(Request $request): JsonResponse
     {
         $validated = $request->validate([
-            'slug' => ['required', 'string', 'max:100', 'unique:permissions,slug'],
+            'slug' => ['required', 'string', 'max:100'],
             'name' => ['required', 'string', 'max:100'],
-            'group' => ['nullable', 'string', 'max:50'],
+            'group' => ['nullable', 'string', 'max:100'],
             'description' => ['nullable', 'string'],
         ]);
 
-        $permission = Permission::create($validated);
+        $result = $this->permissionService->create($validated);
+
+        if (! $result['success']) {
+            return response()->json([
+                'error' => $result['error'],
+                'message' => $result['message'],
+            ], 422);
+        }
 
         return response()->json([
-            'data' => $permission,
-            'message' => 'Permission created successfully',
+            'data' => new PermissionResource($result['permission']),
+            'message' => $result['message'],
         ], 201);
     }
 
@@ -130,16 +91,14 @@ class PermissionAdminController extends Controller
         security: [['sanctum' => []]],
         parameters: [new OA\Parameter(name: 'id', in: 'path', required: true, schema: new OA\Schema(type: 'string', format: 'uuid'))],
         responses: [
-            new OA\Response(response: 200, description: 'Permission details', content: new OA\JsonContent(ref: '#/components/schemas/Permission')),
+            new OA\Response(response: 200, description: 'Permission details'),
             new OA\Response(response: 404, description: 'Permission not found'),
         ]
     )]
-    public function show(string $id): JsonResponse
+    public function show(Permission $permission): JsonResponse
     {
-        $permission = Permission::with('roles')->findOrFail($id);
-
         return response()->json([
-            'data' => $permission,
+            'data' => new PermissionResource($permission),
         ]);
     }
 
@@ -152,37 +111,23 @@ class PermissionAdminController extends Controller
         tags: ['SSO Permissions'],
         security: [['sanctum' => []]],
         parameters: [new OA\Parameter(name: 'id', in: 'path', required: true, schema: new OA\Schema(type: 'string', format: 'uuid'))],
-        requestBody: new OA\RequestBody(
-            content: new OA\JsonContent(
-                properties: [
-                    new OA\Property(property: 'name', type: 'string', maxLength: 100),
-                    new OA\Property(property: 'group', type: 'string', maxLength: 50, nullable: true),
-                    new OA\Property(property: 'description', type: 'string', nullable: true),
-                ]
-            )
-        ),
         responses: [
-            new OA\Response(response: 200, description: 'Permission updated', content: new OA\JsonContent(ref: '#/components/schemas/Permission')),
+            new OA\Response(response: 200, description: 'Permission updated'),
             new OA\Response(response: 404, description: 'Permission not found'),
         ]
     )]
-    public function update(Request $request, string $id): JsonResponse
+    public function update(Request $request, Permission $permission): JsonResponse
     {
-        $permission = Permission::findOrFail($id);
-
         $validated = $request->validate([
             'name' => ['sometimes', 'string', 'max:100'],
-            'group' => ['nullable', 'string', 'max:50'],
+            'group' => ['nullable', 'string', 'max:100'],
             'description' => ['nullable', 'string'],
         ]);
 
-        // Slug cannot be changed
-        unset($validated['slug']);
-
-        $permission->update($validated);
+        $permission = $this->permissionService->update($permission, $validated);
 
         return response()->json([
-            'data' => $permission->fresh(),
+            'data' => new PermissionResource($permission),
             'message' => 'Permission updated successfully',
         ]);
     }
@@ -196,69 +141,32 @@ class PermissionAdminController extends Controller
         tags: ['SSO Permissions'],
         security: [['sanctum' => []]],
         parameters: [new OA\Parameter(name: 'id', in: 'path', required: true, schema: new OA\Schema(type: 'string', format: 'uuid'))],
-        responses: [
-            new OA\Response(response: 204, description: 'Permission deleted'),
-            new OA\Response(response: 404, description: 'Permission not found'),
-        ]
+        responses: [new OA\Response(response: 204, description: 'Permission deleted')]
     )]
-    public function destroy(string $id): JsonResponse
+    public function destroy(Permission $permission): JsonResponse
     {
-        $permission = Permission::findOrFail($id);
-
-        // This will automatically detach from all roles due to cascade
-        $permission->delete();
+        $this->permissionService->delete($permission);
 
         return response()->json(null, 204);
     }
 
     /**
-     * Get permission matrix (roles x permissions).
+     * Get permission matrix (roles vs permissions).
      */
     #[OA\Get(
         path: '/api/admin/sso/permission-matrix',
         summary: 'Get permission matrix',
-        description: 'Returns a matrix of roles and their assigned permissions',
+        description: 'Get matrix of roles vs permissions for the current organization.',
         tags: ['SSO Permissions'],
         security: [['sanctum' => []]],
-        responses: [
-            new OA\Response(
-                response: 200,
-                description: 'Permission matrix',
-                content: new OA\JsonContent(
-                    properties: [
-                        new OA\Property(property: 'roles', type: 'array', items: new OA\Items(ref: '#/components/schemas/Role')),
-                        new OA\Property(property: 'permissions', type: 'object', additionalProperties: new OA\AdditionalProperties(type: 'array', items: new OA\Items(type: 'object'))),
-                        new OA\Property(property: 'matrix', type: 'object', additionalProperties: new OA\AdditionalProperties(type: 'array', items: new OA\Items(type: 'string'))),
-                    ]
-                )
-            ),
-        ]
+        responses: [new OA\Response(response: 200, description: 'Permission matrix')]
     )]
-    public function matrix(): JsonResponse
+    public function matrix(Request $request): JsonResponse
     {
-        $roles = Role::orderBy('level', 'desc')->get(['id', 'slug', 'name']);
+        $orgId = $request->header('X-Organization-Id');
 
-        $permissions = Permission::orderBy('group')
-            ->orderBy('slug')
-            ->get()
-            ->groupBy('group')
-            ->map(fn ($items) => $items->map(fn ($p) => [
-                'id' => $p->id,
-                'slug' => $p->slug,
-                'name' => $p->name,
-            ])->values());
+        $matrix = $this->permissionService->getMatrix($orgId);
 
-        // Build matrix
-        $matrix = [];
-        foreach ($roles as $role) {
-            $rolePermissions = $role->permissions()->pluck('slug')->toArray();
-            $matrix[$role->slug] = $rolePermissions;
-        }
-
-        return response()->json([
-            'roles' => $roles,
-            'permissions' => $permissions,
-            'matrix' => $matrix,
-        ]);
+        return response()->json($matrix);
     }
 }

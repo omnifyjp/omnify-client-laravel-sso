@@ -16,14 +16,14 @@ beforeEach(function () {
         return response()->json([
             'message' => 'organization access granted',
             'org_id' => request()->attributes->get('orgId'),
-            'org_slug' => request()->attributes->get('orgSlug'),
+            'org_id' => request()->attributes->get('orgId'),
             'org_role' => request()->attributes->get('orgRole'),
             'service_role' => request()->attributes->get('serviceRole'),
         ]);
     });
 });
 
-test('sso.org middleware rejects request without X-Org-Id header', function () {
+test('sso.org middleware rejects request without X-Organization-Id header', function () {
     $user = User::factory()->create();
 
     $response = $this->actingAs($user)->getJson('/test-org-access');
@@ -31,7 +31,7 @@ test('sso.org middleware rejects request without X-Org-Id header', function () {
     $response->assertStatus(400)
         ->assertJson([
             'error' => 'MISSING_ORGANIZATION',
-            'message' => 'X-Org-Id header is required',
+            'message' => 'X-Organization-Id header is required',
         ]);
 });
 
@@ -47,7 +47,7 @@ test('sso.org middleware rejects unauthorized organization access', function () 
     $this->app->instance(OrgAccessService::class, $orgAccessService);
 
     $response = $this->actingAs($user)
-        ->withHeaders(['X-Org-Id' => 'unauthorized-org'])
+        ->withHeaders(['X-Organization-Id' => 'unauthorized-org'])
         ->getJson('/test-org-access');
 
     $response->assertStatus(403)
@@ -75,14 +75,14 @@ test('sso.org middleware allows authorized organization access', function () {
     $this->app->instance(OrgAccessService::class, $orgAccessService);
 
     $response = $this->actingAs($user)
-        ->withHeaders(['X-Org-Id' => 'my-company'])
+        ->withHeaders(['X-Organization-Id' => 'my-company'])
         ->getJson('/test-org-access');
 
     $response->assertStatus(200)
         ->assertJson([
             'message' => 'organization access granted',
             'org_id' => 1,
-            'org_slug' => 'my-company',
+            'org_id' => 'my-company',
             'org_role' => 'admin',
             'service_role' => 'admin',
         ]);
@@ -105,12 +105,12 @@ test('sso.org middleware sets organization info on request attributes', function
     $this->app->instance(OrgAccessService::class, $orgAccessService);
 
     $response = $this->actingAs($user)
-        ->withHeaders(['X-Org-Id' => 'test-org'])
+        ->withHeaders(['X-Organization-Id' => 'test-org'])
         ->getJson('/test-org-access');
 
     $response->assertStatus(200)
         ->assertJsonPath('org_id', 123)
-        ->assertJsonPath('org_slug', 'test-org')
+        ->assertJsonPath('org_id', 'test-org')
         ->assertJsonPath('org_role', 'member')
         ->assertJsonPath('service_role', 'manager');
 });

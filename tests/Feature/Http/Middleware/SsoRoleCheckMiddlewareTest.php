@@ -82,7 +82,7 @@ test('sso.role:admin rejects users without any role', function () {
     // No roles assigned
 
     $response = $this->actingAs($user)
-        ->withHeaders(['X-Org-Id' => 'test-org'])
+        ->withHeaders(['X-Organization-Id' => 'test-org'])
         ->getJson('/test-admin-only');
 
     $response->assertStatus(403)
@@ -98,7 +98,7 @@ test('sso.role:admin rejects member role users', function () {
     $user->assignRole('member'); // Global member role
 
     $response = $this->actingAs($user)
-        ->withHeaders(['X-Org-Id' => 'test-org'])
+        ->withHeaders(['X-Organization-Id' => 'test-org'])
         ->getJson('/test-admin-only');
 
     $response->assertStatus(403)
@@ -114,7 +114,7 @@ test('sso.role:admin rejects manager role users', function () {
     $user->assignRole('manager'); // Global manager role
 
     $response = $this->actingAs($user)
-        ->withHeaders(['X-Org-Id' => 'test-org'])
+        ->withHeaders(['X-Organization-Id' => 'test-org'])
         ->getJson('/test-admin-only');
 
     $response->assertStatus(403)
@@ -130,7 +130,7 @@ test('sso.role:admin allows admin role users', function () {
     $user->assignRole('admin'); // Global admin role
 
     $response = $this->actingAs($user)
-        ->withHeaders(['X-Org-Id' => 'test-org'])
+        ->withHeaders(['X-Organization-Id' => 'test-org'])
         ->getJson('/test-admin-only');
 
     $response->assertStatus(200)
@@ -142,7 +142,7 @@ test('sso.role:manager allows manager role users', function () {
     $user->assignRole('manager');
 
     $response = $this->actingAs($user)
-        ->withHeaders(['X-Org-Id' => 'test-org'])
+        ->withHeaders(['X-Organization-Id' => 'test-org'])
         ->getJson('/test-manager-only');
 
     $response->assertStatus(200)
@@ -154,7 +154,7 @@ test('sso.role:manager allows admin role users (higher role)', function () {
     $user->assignRole('admin');
 
     $response = $this->actingAs($user)
-        ->withHeaders(['X-Org-Id' => 'test-org'])
+        ->withHeaders(['X-Organization-Id' => 'test-org'])
         ->getJson('/test-manager-only');
 
     $response->assertStatus(200)
@@ -166,7 +166,7 @@ test('sso.role:member allows all authenticated users with role', function () {
     $user->assignRole('member');
 
     $response = $this->actingAs($user)
-        ->withHeaders(['X-Org-Id' => 'test-org'])
+        ->withHeaders(['X-Organization-Id' => 'test-org'])
         ->getJson('/test-member-only');
 
     $response->assertStatus(200)
@@ -185,7 +185,7 @@ test('org-wide role grants access within organization', function () {
     $user->assignRole('admin', $orgId);
 
     $response = $this->actingAs($user)
-        ->withHeaders(['X-Org-Id' => 'test-org'])
+        ->withHeaders(['X-Organization-Id' => 'test-org'])
         ->getJson('/test-admin-only');
 
     $response->assertStatus(200)
@@ -202,7 +202,7 @@ test('branch-specific role grants access at that branch', function () {
 
     $response = $this->actingAs($user)
         ->withHeaders([
-            'X-Org-Id' => 'test-org',
+            'X-Organization-Id' => 'test-org',
             'X-Branch-Id' => $branchId,
         ])
         ->getJson('/test-admin-only');
@@ -219,7 +219,7 @@ test('global role grants access everywhere', function () {
 
     // Should work without any org/branch context
     $response = $this->actingAs($user)
-        ->withHeaders(['X-Org-Id' => 'test-org'])
+        ->withHeaders(['X-Organization-Id' => 'test-org'])
         ->getJson('/test-admin-only');
 
     $response->assertStatus(200)
@@ -235,7 +235,7 @@ test('user with multiple scoped roles uses highest level', function () {
     $user->assignRole('manager', $orgId);
 
     $response = $this->actingAs($user)
-        ->withHeaders(['X-Org-Id' => 'test-org'])
+        ->withHeaders(['X-Organization-Id' => 'test-org'])
         ->getJson('/test-manager-only');
 
     $response->assertStatus(200)
@@ -256,7 +256,7 @@ test('branch-specific role does not grant access to other branches', function ()
     // Try to access with Osaka branch context - should fail
     $response = $this->actingAs($user)
         ->withHeaders([
-            'X-Org-Id' => 'test-org',
+            'X-Organization-Id' => 'test-org',
             'X-Branch-Id' => $this->osakaBranchId,
         ])
         ->getJson('/test-admin-only');
@@ -278,7 +278,7 @@ test('org-wide role grants access to all branches in org', function () {
     // Should work at any branch
     $response = $this->actingAs($user)
         ->withHeaders([
-            'X-Org-Id' => 'test-org',
+            'X-Organization-Id' => 'test-org',
             'X-Branch-Id' => $this->osakaBranchId,
         ])
         ->getJson('/test-admin-only');
@@ -298,7 +298,7 @@ test('user can have different roles at different branches', function () {
     // Access admin route at Tokyo - should work
     $response = $this->actingAs($user)
         ->withHeaders([
-            'X-Org-Id' => 'test-org',
+            'X-Organization-Id' => 'test-org',
             'X-Branch-Id' => $this->tokyoBranchId,
         ])
         ->getJson('/test-admin-only');
@@ -308,7 +308,7 @@ test('user can have different roles at different branches', function () {
     // Access admin route at Osaka - should fail (only member there)
     $response = $this->actingAs($user)
         ->withHeaders([
-            'X-Org-Id' => 'test-org',
+            'X-Organization-Id' => 'test-org',
             'X-Branch-Id' => $this->osakaBranchId,
         ])
         ->getJson('/test-admin-only');
@@ -330,7 +330,7 @@ test('HQ admin (org-wide) can access all branch resources', function () {
     // Can access Tokyo branch
     $response = $this->actingAs($user)
         ->withHeaders([
-            'X-Org-Id' => 'test-org',
+            'X-Organization-Id' => 'test-org',
             'X-Branch-Id' => $this->tokyoBranchId,
         ])
         ->getJson('/test-admin-only');
@@ -339,7 +339,7 @@ test('HQ admin (org-wide) can access all branch resources', function () {
     // Can access Osaka branch
     $response = $this->actingAs($user)
         ->withHeaders([
-            'X-Org-Id' => 'test-org',
+            'X-Organization-Id' => 'test-org',
             'X-Branch-Id' => $this->osakaBranchId,
         ])
         ->getJson('/test-admin-only');
@@ -347,7 +347,7 @@ test('HQ admin (org-wide) can access all branch resources', function () {
 
     // Can access without branch context (HQ level)
     $response = $this->actingAs($user)
-        ->withHeaders(['X-Org-Id' => 'test-org'])
+        ->withHeaders(['X-Organization-Id' => 'test-org'])
         ->getJson('/test-admin-only');
     $response->assertStatus(200);
 });
@@ -361,7 +361,7 @@ test('branch staff cannot access HQ-only resources', function () {
 
     // Cannot access org-wide admin route (no branch context = HQ level)
     $response = $this->actingAs($user)
-        ->withHeaders(['X-Org-Id' => 'test-org'])
+        ->withHeaders(['X-Organization-Id' => 'test-org'])
         ->getJson('/test-admin-only');
 
     $response->assertStatus(403);

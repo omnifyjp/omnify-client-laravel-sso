@@ -19,9 +19,7 @@ use Symfony\Component\HttpFoundation\Response;
  *
  * Headers read:
  * - X-Branch-Id (required): Console branch UUID
- * - X-Org-Id (optional): Console organization UUID (for auto-creation)
- * - X-Branch-Name (optional): Branch name (for auto-creation)
- * - X-Branch-Code (optional): Branch code (for auto-creation)
+ * - X-Organization-Id (optional): Console organization UUID (for auto-creation)
  *
  * Sets request attributes:
  * - branch: Branch model instance
@@ -62,16 +60,14 @@ class SetBranchFromHeader
 
             // Auto-create branch if it doesn't exist (lazy sync)
             if (! $branch) {
-                $consoleOrgId = $request->header('X-Org-Id');
-                $branchName = $request->header('X-Branch-Name');
-                $branchCode = $request->header('X-Branch-Code');
+                $consoleOrgId = $request->header('X-Organization-Id');
 
                 if ($consoleOrgId) {
                     $branch = BranchCache::create([
                         'console_branch_id' => $consoleBranchId,
                         'console_org_id' => $consoleOrgId,
-                        'code' => $branchCode ?? 'DEFAULT',
-                        'name' => $branchName ?? 'Default Branch',
+                        'code' => 'DEFAULT',
+                        'name' => 'Default Branch',
                         'is_headquarters' => true,
                         'is_active' => true,
                     ]);

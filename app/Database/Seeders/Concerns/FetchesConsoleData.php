@@ -45,30 +45,30 @@ trait FetchesConsoleData
      *
      * Tries Console API first, falls back to direct database query.
      *
-     * @param  string  $orgSlug  Organization slug (e.g., 'company-abc')
+     * @param  string  $orgId  Organization slug (e.g., 'company-abc')
      * @return array|null ['org_id' => string, 'org_name' => string, 'branches' => array]
      */
-    protected function fetchOrgDataFromConsole(string $orgSlug): ?array
+    protected function fetchOrgDataFromConsole(string $orgId): ?array
     {
         $consoleUrl = config('sso-client.console.url');
 
         if (! $consoleUrl) {
             $this->logWarning('SSO Console URL not configured');
 
-            return $this->fetchOrgDataFromConsoleDb($orgSlug);
+            return $this->fetchOrgDataFromConsoleDb($orgId);
         }
 
         try {
             // Try to fetch from Console's internal API
             $response = Http::timeout(5)
-                ->get("{$consoleUrl}/api/internal/organizations/{$orgSlug}");
+                ->get("{$consoleUrl}/api/internal/organizations/{$orgId}");
 
             if ($response->successful()) {
                 $data = $response->json();
 
                 return [
                     'org_id' => $data['id'] ?? null,
-                    'org_name' => $data['name'] ?? $orgSlug,
+                    'org_name' => $data['name'] ?? $orgId,
                     'branches' => collect($data['branches'] ?? [])->mapWithKeys(fn ($b) => [
                         $b['code'] => $b['id'],
                     ])->toArray(),
@@ -78,13 +78,13 @@ trait FetchesConsoleData
             $this->logWarning("Console API returned: {$response->status()} - trying database fallback");
 
             // Fallback: Try to connect to Console's database directly
-            return $this->fetchOrgDataFromConsoleDb($orgSlug);
+            return $this->fetchOrgDataFromConsoleDb($orgId);
 
         } catch (\Exception $e) {
             $this->logWarning("Could not connect to Console: {$e->getMessage()}");
 
             // Try database fallback
-            return $this->fetchOrgDataFromConsoleDb($orgSlug);
+            return $this->fetchOrgDataFromConsoleDb($orgId);
         }
     }
 
@@ -92,7 +92,7 @@ trait FetchesConsoleData
      * Fetch org data directly from Console database.
      * Works when Console (auth-omnify) is on the same MySQL server.
      */
-    protected function fetchOrgDataFromConsoleDb(string $orgSlug): ?array
+    protected function fetchOrgDataFromConsoleDb(string $orgId): ?array
     {
         try {
             // Console database name - can be configured via env or try common names
@@ -110,7 +110,7 @@ trait FetchesConsoleData
                     // Check if we can query the console database
                     $org = DB::select(
                         "SELECT id, name, slug FROM {$consoleDb}.organizations WHERE slug = ? LIMIT 1",
-                        [$orgSlug]
+                        [$orgId]
                     );
 
                     if (! empty($org)) {

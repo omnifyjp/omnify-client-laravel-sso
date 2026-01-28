@@ -260,7 +260,7 @@ if ($level >= 50) {  // Manager level or above
 When checking permissions, the system aggregates from all applicable scopes:
 
 ```
-API Request with X-Org-Id: A, X-Branch-Id: 1
+API Request with X-Organization-Id: A, X-Branch-Id: 1
          │
          ▼
 ┌─────────────────────────────────────────┐
@@ -402,7 +402,7 @@ Route::middleware(['sso.auth', 'sso.org'])->group(function () {
 | Header | Required | Description |
 |--------|----------|-------------|
 | `Authorization` | Yes | Bearer token |
-| `X-Org-Id` | Yes | Organization slug |
+| `X-Organization-Id` | Yes | Organization slug |
 | `X-Branch-Id` | No | Branch UUID (for branch-specific operations) |
 
 ---

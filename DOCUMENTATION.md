@@ -381,7 +381,7 @@ Khi kiểm tra permission, hệ thống aggregates permissions từ tất cả a
 
                     ┌─────────────────┐
                     │  API Request    │
-                    │  X-Org-Id: A    │
+                    │  X-Organization-Id: A    │
                     │  X-Branch-Id: 1 │
                     └────────┬────────┘
                              │
@@ -457,7 +457,7 @@ CREATE TABLE role_user (
 | Header | Required | Description |
 |--------|----------|-------------|
 | `Authorization` | Yes | Bearer token |
-| `X-Org-Id` | Yes | Organization slug |
+| `X-Organization-Id` | Yes | Organization slug |
 | `X-Branch-Id` | No | Branch UUID (for branch-specific operations) |
 
 #### Assign Role to User
@@ -466,7 +466,7 @@ CREATE TABLE role_user (
 POST /api/admin/sso/users/{userId}/roles
 Content-Type: application/json
 Authorization: Bearer {token}
-X-Org-Id: my-org
+X-Organization-Id: my-org
 
 {
   "role_id": "uuid-of-role",
@@ -493,7 +493,7 @@ X-Org-Id: my-org
 ```http
 GET /api/admin/sso/users/{userId}/roles
 Authorization: Bearer {token}
-X-Org-Id: my-org
+X-Organization-Id: my-org
 ```
 
 **Response:**
@@ -537,7 +537,7 @@ X-Org-Id: my-org
 DELETE /api/admin/sso/users/{userId}/roles/{roleId}
 Content-Type: application/json
 Authorization: Bearer {token}
-X-Org-Id: my-org
+X-Organization-Id: my-org
 
 {
   "console_org_id": "org-uuid",
@@ -551,7 +551,7 @@ X-Org-Id: my-org
 PUT /api/admin/sso/users/{userId}/roles/sync
 Content-Type: application/json
 Authorization: Bearer {token}
-X-Org-Id: my-org
+X-Organization-Id: my-org
 
 {
   "roles": ["manager", "viewer"],  // Role slugs or UUIDs
@@ -640,7 +640,7 @@ Middleware tự động set context từ headers:
 // In routes/api.php
 Route::middleware(['sso.auth', 'sso.org'])->group(function () {
     // sso.org middleware reads:
-    // - X-Org-Id header (required) → sets orgId in session/request
+    // - X-Organization-Id header (required) → sets orgId in session/request
     // - X-Branch-Id header (optional) → sets branchId in session/request
 
     Route::middleware('sso.permission:orders.create')->group(function () {
@@ -853,7 +853,7 @@ Route::middleware('sso.auth')->group(function () {
 ### SsoOrganizationAccess
 
 ```php
-// Usage - Requires X-Org-Id header
+// Usage - Requires X-Organization-Id header
 Route::middleware('sso.org')->group(function () {
     // Requires organization context
 });

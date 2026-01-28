@@ -83,12 +83,12 @@ class ConsoleApiService
      *
      * @return array{organization_id: string, organization_slug: string, org_role: string, service_role: string|null, service_role_level: int, all_branches_access: bool, branch_count: int, primary_branch: array{id: int, code: string, name: string}|null}|null
      */
-    public function getAccess(string $accessToken, string $orgSlug): ?array
+    public function getAccess(string $accessToken, string $orgId): ?array
     {
         $response = $this->request()
             ->withToken($accessToken)
             ->get("{$this->consoleUrl}/api/sso/access", [
-                'organization_slug' => $orgSlug,
+                'organization_slug' => $orgId,
             ]);
 
         if (! $response->successful()) {
@@ -128,12 +128,12 @@ class ConsoleApiService
      *
      * @return array<array{id: int, name: string, path: string|null, parent_id: int|null, is_leader: bool}>
      */
-    public function getUserTeams(string $accessToken, string $orgSlug): array
+    public function getUserTeams(string $accessToken, string $orgId): array
     {
         $response = $this->request()
             ->withToken($accessToken)
             ->get("{$this->consoleUrl}/api/sso/teams", [
-                'organization_slug' => $orgSlug,
+                'organization_slug' => $orgId,
             ]);
 
         if (! $response->successful()) {
@@ -153,12 +153,12 @@ class ConsoleApiService
      *
      * @return array{all_branches_access: bool, branches: array<array{id: int, code: string, name: string, is_headquarters: bool, is_primary: bool, is_assigned: bool, access_type: string, timezone: string|null, currency: string|null, locale: string|null}>, primary_branch_id: int|null, organization: array{id: string, slug: string, name: string}}|null
      */
-    public function getUserBranches(string $accessToken, string $orgSlug): ?array
+    public function getUserBranches(string $accessToken, string $orgId): ?array
     {
         $response = $this->request()
             ->withToken($accessToken)
             ->get("{$this->consoleUrl}/api/sso/branches", [
-                'organization_slug' => $orgSlug,
+                'organization_slug' => $orgId,
             ]);
 
         if (! $response->successful()) {

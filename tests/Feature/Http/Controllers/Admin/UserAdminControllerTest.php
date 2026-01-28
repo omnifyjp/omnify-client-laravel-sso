@@ -42,7 +42,7 @@ describe('GET /api/admin/sso/users/{user}/permissions', function () {
         $user->assignRole($role);
 
         $response = $this->getJson("/api/admin/sso/users/{$user->id}/permissions", [
-            'X-Org-Id' => 'test-org',
+            'X-Organization-Id' => 'test-org',
         ]);
 
         $response->assertOk()
@@ -97,7 +97,7 @@ describe('GET /api/admin/sso/users/{user}/permissions', function () {
         $user->assignRole($branchRole, $orgId, $branchId); // Branch-specific
 
         $response = $this->getJson("/api/admin/sso/users/{$user->id}/permissions?org_id={$orgId}&branch_id={$branchId}", [
-            'X-Org-Id' => 'test-org',
+            'X-Organization-Id' => 'test-org',
         ]);
 
         $response->assertOk();
@@ -128,7 +128,7 @@ describe('GET /api/admin/sso/users/{user}/permissions', function () {
 
         // Query with different org
         $response = $this->getJson("/api/admin/sso/users/{$user->id}/permissions?org_id={$orgId}", [
-            'X-Org-Id' => 'test-org',
+            'X-Organization-Id' => 'test-org',
         ]);
 
         $response->assertOk();
@@ -141,7 +141,7 @@ describe('GET /api/admin/sso/users/{user}/permissions', function () {
         $user = User::factory()->create();
 
         $response = $this->getJson("/api/admin/sso/users/{$user->id}/permissions", [
-            'X-Org-Id' => 'test-org',
+            'X-Organization-Id' => 'test-org',
         ]);
 
         $response->assertOk();
@@ -154,7 +154,7 @@ describe('GET /api/admin/sso/users/{user}/permissions', function () {
         $fakeId = (string) Str::uuid();
 
         $response = $this->getJson("/api/admin/sso/users/{$fakeId}/permissions", [
-            'X-Org-Id' => 'test-org',
+            'X-Organization-Id' => 'test-org',
         ]);
 
         $response->assertNotFound();
@@ -176,7 +176,7 @@ describe('GET /api/admin/sso/users/{user}/permissions', function () {
 
         // Query for branch1
         $response = $this->getJson("/api/admin/sso/users/{$user->id}/permissions?org_id={$orgId}&branch_id={$branch1}", [
-            'X-Org-Id' => 'test-org',
+            'X-Organization-Id' => 'test-org',
         ]);
 
         $response->assertOk();
@@ -198,7 +198,7 @@ describe('GET /api/admin/sso/users/{user}/permissions', function () {
 
         // Query with specific org/branch context
         $response = $this->getJson("/api/admin/sso/users/{$user->id}/permissions?org_id={$orgId}&branch_id={$branchId}", [
-            'X-Org-Id' => 'test-org',
+            'X-Organization-Id' => 'test-org',
         ]);
 
         $response->assertOk();
@@ -225,7 +225,7 @@ describe('GET /api/admin/sso/users/{user}/permissions', function () {
         $user->assignRole($role2, $orgId, null);
 
         $response = $this->getJson("/api/admin/sso/users/{$user->id}/permissions?org_id={$orgId}", [
-            'X-Org-Id' => 'test-org',
+            'X-Organization-Id' => 'test-org',
         ]);
 
         $response->assertOk();
@@ -242,7 +242,7 @@ describe('GET /api/admin/sso/users/{user}/permissions', function () {
         $branchId = (string) Str::uuid();
 
         $response = $this->getJson("/api/admin/sso/users/{$user->id}/permissions?org_id={$orgId}&branch_id={$branchId}", [
-            'X-Org-Id' => 'test-org',
+            'X-Organization-Id' => 'test-org',
         ]);
 
         $response->assertOk();
@@ -254,7 +254,7 @@ describe('GET /api/admin/sso/users/{user}/permissions', function () {
         $user = User::factory()->create();
 
         $response = $this->getJson("/api/admin/sso/users/{$user->id}/permissions", [
-            'X-Org-Id' => 'test-org',
+            'X-Organization-Id' => 'test-org',
         ]);
 
         $response->assertOk();
@@ -274,7 +274,7 @@ describe('PUT /api/admin/sso/users/{user}', function () {
         $response = $this->putJson("/api/admin/sso/users/{$user->id}", [
             'name' => 'New Name',
         ], [
-            'X-Org-Id' => 'test-org',
+            'X-Organization-Id' => 'test-org',
         ]);
 
         $response->assertOk();
@@ -290,7 +290,7 @@ describe('PUT /api/admin/sso/users/{user}', function () {
         $response = $this->putJson("/api/admin/sso/users/{$user->id}", [
             'email' => 'new-unique@example.com',
         ], [
-            'X-Org-Id' => 'test-org',
+            'X-Organization-Id' => 'test-org',
         ]);
 
         $response->assertOk();
@@ -304,7 +304,7 @@ describe('PUT /api/admin/sso/users/{user}', function () {
         $response = $this->putJson("/api/admin/sso/users/{$fakeId}", [
             'name' => 'New Name',
         ], [
-            'X-Org-Id' => 'test-org',
+            'X-Organization-Id' => 'test-org',
         ]);
 
         $response->assertNotFound();
@@ -321,7 +321,7 @@ describe('DELETE /api/admin/sso/users/{user}', function () {
         $userId = $user->id;
 
         $response = $this->deleteJson("/api/admin/sso/users/{$userId}", [], [
-            'X-Org-Id' => 'test-org',
+            'X-Organization-Id' => 'test-org',
         ]);
 
         $response->assertNoContent();
@@ -342,7 +342,7 @@ describe('DELETE /api/admin/sso/users/{user}', function () {
         expect($user->getRoleAssignments())->toHaveCount(2);
 
         $response = $this->deleteJson("/api/admin/sso/users/{$userId}", [], [
-            'X-Org-Id' => 'test-org',
+            'X-Organization-Id' => 'test-org',
         ]);
 
         $response->assertNoContent();
@@ -355,7 +355,7 @@ describe('DELETE /api/admin/sso/users/{user}', function () {
         $fakeId = (string) Str::uuid();
 
         $response = $this->deleteJson("/api/admin/sso/users/{$fakeId}", [], [
-            'X-Org-Id' => 'test-org',
+            'X-Organization-Id' => 'test-org',
         ]);
 
         $response->assertNotFound();
@@ -374,7 +374,7 @@ describe('GET /api/admin/sso/users/{user}', function () {
         ]);
 
         $response = $this->getJson("/api/admin/sso/users/{$user->id}", [
-            'X-Org-Id' => 'test-org',
+            'X-Organization-Id' => 'test-org',
         ]);
 
         $response->assertOk()
@@ -386,7 +386,7 @@ describe('GET /api/admin/sso/users/{user}', function () {
         $fakeId = (string) Str::uuid();
 
         $response = $this->getJson("/api/admin/sso/users/{$fakeId}", [
-            'X-Org-Id' => 'test-org',
+            'X-Organization-Id' => 'test-org',
         ]);
 
         $response->assertNotFound();

@@ -2,8 +2,9 @@
 
 namespace Omnify\SsoClient\Database\Factories;
 
-use Illuminate\Database\Eloquent\Factories\Factory;
 use Omnify\SsoClient\Models\UserCache;
+use Illuminate\Database\Eloquent\Factories\Factory;
+
 
 /**
  * @extends Factory<UserCache>
@@ -20,10 +21,13 @@ class UserCacheFactory extends Factory
     public function definition(): array
     {
         return [
-            'name' => fake()->name(),
+            'name' => fake()->sentence(3),
             'email' => fake()->unique()->safeEmail(),
-            'console_user_id' => fake()->uuid(),
-            'console_org_id' => fake()->uuid(),
+            'console_user_id' => fake()->sentence(),
+            'console_org_id' => fake()->sentence(),
+            'console_access_token' => fake()->paragraphs(3, true),
+            'console_refresh_token' => fake()->paragraphs(3, true),
+            'console_token_expires_at' => fake()->dateTime(),
         ];
     }
 }

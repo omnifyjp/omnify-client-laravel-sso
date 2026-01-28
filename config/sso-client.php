@@ -97,6 +97,19 @@ return [
             'sso.org',
             'sso.role:admin',
         ],
+
+        // Enable access management pages (Inertia)
+        'access_enabled' => env('SSO_ACCESS_ROUTES_ENABLED', true),
+
+        // Route prefix for access management pages (IAM)
+        'access_prefix' => env('SSO_ACCESS_PREFIX', 'admin/iam'),
+
+        // Middleware for access management pages
+        'access_middleware' => ['web', 'sso.auth'],
+
+        // Inertia page path for access management pages
+        // This should match the location of your pages in resources/js/pages/
+        'access_pages_path' => env('SSO_ACCESS_PAGES_PATH', 'admin/iam'),
     ],
 
     /*

@@ -96,10 +96,10 @@ class SsoBranchController extends Controller
             ], 401);
         }
 
-        // Get current organization slug from request or user's default
-        $orgSlug = $request->query('organization_slug', $user->sso_current_org_slug ?? null);
+        // Get current organization ID from request or user's default
+        $orgId = $request->query('organization_id', $user->sso_current_org_id ?? null);
 
-        if (! $orgSlug) {
+        if (! $orgId) {
             return response()->json([
                 'error' => 'NO_ORGANIZATION',
                 'message' => 'No organization selected',
@@ -117,7 +117,7 @@ class SsoBranchController extends Controller
         }
 
         // Fetch branches from console
-        $result = $this->consoleApi->getUserBranches($accessToken, $orgSlug);
+        $result = $this->consoleApi->getUserBranches($accessToken, $orgId);
 
         if ($result === null) {
             return response()->json([

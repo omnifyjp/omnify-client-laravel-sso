@@ -145,7 +145,7 @@ User Permissions = Role Permissions (scoped) + Team Permissions (org-scoped)
 
                     ┌─────────────────┐
                     │  API Request    │
-                    │  X-Org-Id: A    │
+                    │  X-Organization-Id: A    │
                     │  X-Branch-Id: 1 │
                     └────────┬────────┘
                              │
@@ -269,7 +269,7 @@ Required:
 │ Header         │ Description                              │
 ├────────────────┼──────────────────────────────────────────┤
 │ Authorization  │ Bearer {token}                           │
-│ X-Org-Id       │ Organization slug (required for org ops) │
+│ X-Organization-Id       │ Organization slug (required for org ops) │
 └────────────────┴──────────────────────────────────────────┘
 
 Optional:
