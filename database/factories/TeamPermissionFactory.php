@@ -2,10 +2,9 @@
 
 namespace Omnify\SsoClient\Database\Factories;
 
-use Omnify\SsoClient\Models\TeamPermission;
 use Illuminate\Database\Eloquent\Factories\Factory;
-
 use Omnify\SsoClient\Models\Permission;
+use Omnify\SsoClient\Models\TeamPermission;
 
 /**
  * @extends Factory<TeamPermission>
@@ -22,8 +21,8 @@ class TeamPermissionFactory extends Factory
     public function definition(): array
     {
         return [
-            'console_org_id' => fake()->sentence(),
-            'console_team_id' => fake()->sentence(),
+            'console_org_id' => fake()->uuid(),
+            'console_team_id' => fake()->uuid(),
             'permission_id' => Permission::query()->inRandomOrder()->first()?->id ?? Permission::factory()->create()->id,
         ];
     }

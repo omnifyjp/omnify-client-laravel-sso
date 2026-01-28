@@ -2,9 +2,8 @@
 
 namespace Omnify\SsoClient\Database\Factories;
 
-use Omnify\SsoClient\Models\TeamCache;
 use Illuminate\Database\Eloquent\Factories\Factory;
-
+use Omnify\SsoClient\Models\TeamCache;
 
 /**
  * @extends Factory<TeamCache>
@@ -21,9 +20,9 @@ class TeamCacheFactory extends Factory
     public function definition(): array
     {
         return [
-            'console_team_id' => fake()->sentence(),
-            'console_org_id' => fake()->sentence(),
-            'name' => fake()->sentence(3),
+            'console_team_id' => fake()->uuid(),
+            'console_org_id' => fake()->uuid(),
+            'name' => fake()->words(3, true),
         ];
     }
 }

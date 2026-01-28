@@ -2,9 +2,8 @@
 
 namespace Omnify\SsoClient\Database\Factories;
 
-use Omnify\SsoClient\Models\Role;
 use Illuminate\Database\Eloquent\Factories\Factory;
-
+use Omnify\SsoClient\Models\Role;
 
 /**
  * @extends Factory<Role>
@@ -21,11 +20,11 @@ class RoleFactory extends Factory
     public function definition(): array
     {
         return [
-            'console_org_id' => fake()->words(3, true),
-            'name' => fake()->sentence(3),
+            'console_org_id' => fake()->uuid(),
+            'name' => fake()->words(3, true),
             'slug' => fake()->unique()->slug(2),
-            'description' => fake()->paragraphs(3, true),
-            'level' => fake()->numberBetween(1, 1000),
+            'description' => fake()->optional()->sentence(),
+            'level' => fake()->numberBetween(1, 100),
         ];
     }
 }

@@ -2,9 +2,8 @@
 
 namespace Omnify\SsoClient\Database\Factories;
 
-use Omnify\SsoClient\Models\OrganizationCache;
 use Illuminate\Database\Eloquent\Factories\Factory;
-
+use Omnify\SsoClient\Models\OrganizationCache;
 
 /**
  * @extends Factory<OrganizationCache>
@@ -21,10 +20,10 @@ class OrganizationCacheFactory extends Factory
     public function definition(): array
     {
         return [
-            'console_org_id' => fake()->sentence(),
-            'name' => fake()->sentence(3),
+            'console_org_id' => fake()->uuid(),
+            'name' => fake()->company(),
             'code' => fake()->unique()->regexify('[A-Z0-9]{8}'),
-            'is_active' => fake()->boolean(),
+            'is_active' => true,
         ];
     }
 }

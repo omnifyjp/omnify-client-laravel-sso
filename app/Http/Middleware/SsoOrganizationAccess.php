@@ -82,7 +82,7 @@ class SsoOrganizationAccess
 
         // Set organization info on request attributes
         $request->attributes->set('orgId', $orgId);
-        $request->attributes->set('orgId', $access['organization_slug']);
+        $request->attributes->set('orgSlug', $access['organization_slug']);
         $request->attributes->set('orgRole', $access['org_role']);
         $request->attributes->set('serviceRole', $access['service_role']);
         $request->attributes->set('serviceRoleLevel', $access['service_role_level']);
@@ -90,7 +90,7 @@ class SsoOrganizationAccess
         // Store in session for later use
         session([
             'current_org_id' => $orgId,
-            'current_org_id' => $access['organization_slug'],
+            'current_org_slug' => $access['organization_slug'],
             'service_role' => $access['service_role'],
         ]);
 
@@ -144,7 +144,7 @@ class SsoOrganizationAccess
         // Also set as request properties for convenience
         $request->merge([
             '_org_id' => $orgId,
-            '_org_id' => $access['organization_slug'],
+            '_org_slug' => $access['organization_slug'],
             '_branch_id' => $branchId,
         ]);
 

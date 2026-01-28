@@ -2,9 +2,8 @@
 
 namespace Omnify\SsoClient\Database\Factories;
 
-use Omnify\SsoClient\Models\Permission;
 use Illuminate\Database\Eloquent\Factories\Factory;
-
+use Omnify\SsoClient\Models\Permission;
 
 /**
  * @extends Factory<Permission>

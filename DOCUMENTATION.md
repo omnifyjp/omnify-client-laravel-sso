@@ -74,16 +74,16 @@
 
 ### Dữ liệu được quản lý ở đâu?
 
-| Data | Console | Service | Ghi chú |
-|------|---------|---------|---------|
-| **User Authentication** | ✅ | ❌ | Login, password, JWT |
-| **Plans & Subscriptions** | ✅ | ❌ | Pricing, billing |
-| **Service Access Control** | ✅ | ❌ | User được dùng service nào |
-| **Users (local)** | ❌ | ✅ | Lưu `console_user_id` để link |
-| **Roles** | ❌ | ✅ | Service tự định nghĩa |
-| **Permissions** | ❌ | ✅ | Service tự định nghĩa |
-| **Role Assignments** | ❌ | ✅ | Scoped by org/branch |
-| **Business Data** | ❌ | ✅ | Orders, products, etc. |
+| Data                       | Console | Service | Ghi chú                       |
+| -------------------------- | ------- | ------- | ----------------------------- |
+| **User Authentication**    | ✅       | ❌       | Login, password, JWT          |
+| **Plans & Subscriptions**  | ✅       | ❌       | Pricing, billing              |
+| **Service Access Control** | ✅       | ❌       | User được dùng service nào    |
+| **Users (local)**          | ❌       | ✅       | Lưu `console_user_id` để link |
+| **Roles**                  | ❌       | ✅       | Service tự định nghĩa         |
+| **Permissions**            | ❌       | ✅       | Service tự định nghĩa         |
+| **Role Assignments**       | ❌       | ✅       | Scoped by org/branch          |
+| **Business Data**          | ❌       | ✅       | Orders, products, etc.        |
 
 ### Authentication Flow
 
@@ -112,31 +112,31 @@
 
 ### Tại sao thiết kế như vậy?
 
-| Lý do | Giải thích |
-|-------|------------|
-| **Database độc lập** | Service có thể scale, backup, migrate độc lập |
-| **Không single point of failure** | Console down ≠ Service down (sau khi đã login) |
-| **Domain-specific** | Mỗi service có roles/permissions phù hợp với domain |
-| **Performance** | Authorization check local, không network latency |
-| **Data isolation** | Service A không thể access data của Service B |
-| **Simple Console** | Console chỉ làm auth + subscription, không phình to |
+| Lý do                             | Giải thích                                          |
+| --------------------------------- | --------------------------------------------------- |
+| **Database độc lập**              | Service có thể scale, backup, migrate độc lập       |
+| **Không single point of failure** | Console down ≠ Service down (sau khi đã login)      |
+| **Domain-specific**               | Mỗi service có roles/permissions phù hợp với domain |
+| **Performance**                   | Authorization check local, không network latency    |
+| **Data isolation**                | Service A không thể access data của Service B       |
+| **Simple Console**                | Console chỉ làm auth + subscription, không phình to |
 
 ---
 
 ## Key Features
 
-| Feature | Description |
-|---------|-------------|
-| JWT-Based SSO | Xác thực an toàn qua token exchange với Omnify Console |
-| UUID Primary Keys | Tất cả models sử dụng UUID để tương thích với Console |
-| Role-Based Access Control | Quản lý role và permission linh hoạt |
+| Feature                      | Description                                                     |
+| ---------------------------- | --------------------------------------------------------------- |
+| JWT-Based SSO                | Xác thực an toàn qua token exchange với Omnify Console          |
+| UUID Primary Keys            | Tất cả models sử dụng UUID để tương thích với Console           |
+| Role-Based Access Control    | Quản lý role và permission linh hoạt                            |
 | **Branch-Level Permissions** | **NEW!** Scoped role assignments cho multi-branch organizations |
-| Team Permissions | Quản lý permission cấp team qua Console API |
-| Minimal Schema | Chỉ lưu Console references, fetch data từ Console API |
-| Security Features | Open redirect protection, encrypted tokens, rate limiting |
-| Audit Logging | SSO log channel riêng cho security events |
-| Multi-language | Hỗ trợ i18n (ja, en, vi) |
-| Omnify Schema-Driven | Auto-generated models qua Omnify |
+| Team Permissions             | Quản lý permission cấp team qua Console API                     |
+| Minimal Schema               | Chỉ lưu Console references, fetch data từ Console API           |
+| Security Features            | Open redirect protection, encrypted tokens, rate limiting       |
+| Audit Logging                | SSO log channel riêng cho security events                       |
+| Multi-language               | Hỗ trợ i18n (ja, en, vi)                                        |
+| Omnify Schema-Driven         | Auto-generated models qua Omnify                                |
 
 ---
 
@@ -255,16 +255,16 @@ Tất cả tables sử dụng UUID primary keys để tương thích với Conso
 
 ### Tables
 
-| Table | Purpose | Key Fields |
-|-------|---------|------------|
-| `users` | SSO users | id (UUID), console_user_id, console_access_token, console_refresh_token |
-| `roles` | Local roles | id (UUID), name, slug, level, description |
-| `permissions` | Local permissions | id (UUID), name, slug, group |
-| `role_permissions` | Role-Permission pivot | role_id, permission_id (composite PK) |
-| `role_user` | User-Role pivot with scope | id (UUID), role_id, user_id, **console_org_id**, **console_branch_id** |
-| `teams` | Console team refs | id (UUID), console_team_id, console_org_id, name |
-| `branches` | Console branch refs | id (UUID), console_branch_id, console_org_id, code, name |
-| `team_permissions` | Team-level permissions | id (UUID), console_team_id, console_org_id, permission_id |
+| Table              | Purpose                    | Key Fields                                                              |
+| ------------------ | -------------------------- | ----------------------------------------------------------------------- |
+| `users`            | SSO users                  | id (UUID), console_user_id, console_access_token, console_refresh_token |
+| `roles`            | Local roles                | id (UUID), name, slug, level, description                               |
+| `permissions`      | Local permissions          | id (UUID), name, slug, group                                            |
+| `role_permissions` | Role-Permission pivot      | role_id, permission_id (composite PK)                                   |
+| `role_user`        | User-Role pivot with scope | id (UUID), role_id, user_id, **console_org_id**, **console_branch_id**  |
+| `teams`            | Console team refs          | id (UUID), console_team_id, console_org_id, name                        |
+| `branches`         | Console branch refs        | id (UUID), console_branch_id, console_org_id, code, name                |
+| `team_permissions` | Team-level permissions     | id (UUID), console_team_id, console_org_id, permission_id               |
 
 > **Note:** `role_user` table now has `console_org_id` and `console_branch_id` for scoped role assignments (Branch-Level Permissions).
 
@@ -442,23 +442,23 @@ CREATE TABLE role_user (
 
 **Example Data:**
 
-| id | user_id | role_id | console_org_id | console_branch_id | Meaning |
-|----|---------|---------|----------------|-------------------|---------|
-| 1 | user-A | admin | null | null | Global Admin |
-| 2 | user-B | manager | org-X | null | Org-wide Manager |
-| 3 | user-C | admin | org-X | branch-tokyo | Tokyo Admin |
-| 4 | user-C | staff | org-X | branch-osaka | Osaka Staff (same user!) |
-| 5 | user-D | staff | org-X | branch-tokyo | Tokyo Staff |
+| id  | user_id | role_id | console_org_id | console_branch_id | Meaning                  |
+| --- | ------- | ------- | -------------- | ----------------- | ------------------------ |
+| 1   | user-A  | admin   | null           | null              | Global Admin             |
+| 2   | user-B  | manager | org-X          | null              | Org-wide Manager         |
+| 3   | user-C  | admin   | org-X          | branch-tokyo      | Tokyo Admin              |
+| 4   | user-C  | staff   | org-X          | branch-osaka      | Osaka Staff (same user!) |
+| 5   | user-D  | staff   | org-X          | branch-tokyo      | Tokyo Staff              |
 
 ### API Usage
 
 #### Headers
 
-| Header | Required | Description |
-|--------|----------|-------------|
-| `Authorization` | Yes | Bearer token |
-| `X-Organization-Id` | Yes | Organization slug |
-| `X-Branch-Id` | No | Branch UUID (for branch-specific operations) |
+| Header              | Required | Description                                  |
+| ------------------- | -------- | -------------------------------------------- |
+| `Authorization`     | Yes      | Bearer token                                 |
+| `X-Organization-Id` | Yes      | Organization slug                            |
+| `X-Branch-Id`       | No       | Branch UUID (for branch-specific operations) |
 
 #### Assign Role to User
 
@@ -712,11 +712,11 @@ class Role extends RoleBaseModel
 
 **Role Hierarchy Levels:**
 
-| Role | Level |
-|------|-------|
-| admin | 100 |
-| manager | 50 |
-| member | 10 |
+| Role    | Level |
+| ------- | ----- |
+| admin   | 100   |
+| manager | 50    |
+| member  | 10    |
 
 ### Permission Model
 
@@ -886,35 +886,35 @@ Route::middleware('sso.role:admin')->group(function () {
 
 ### SsoCallbackController
 
-| Endpoint | Method | Description |
-|----------|--------|-------------|
-| `/api/sso/callback` | POST | Handle SSO callback, exchange code |
-| `/api/sso/logout` | POST | Logout user, revoke tokens |
-| `/api/sso/user` | GET | Get authenticated user & organizations |
-| `/api/sso/global-logout-url` | GET | Get Console logout URL |
+| Endpoint                     | Method | Description                            |
+| ---------------------------- | ------ | -------------------------------------- |
+| `/api/sso/callback`          | POST   | Handle SSO callback, exchange code     |
+| `/api/sso/logout`            | POST   | Logout user, revoke tokens             |
+| `/api/sso/user`              | GET    | Get authenticated user & organizations |
+| `/api/sso/global-logout-url` | GET    | Get Console logout URL                 |
 
 ### SsoReadOnlyController
 
-| Endpoint | Method | Description |
-|----------|--------|-------------|
-| `/api/sso/roles` | GET | List all roles |
-| `/api/sso/roles/{id}` | GET | Get role with permissions |
-| `/api/sso/permissions` | GET | List permissions (with filtering) |
-| `/api/sso/permission-matrix` | GET | Role-permission matrix |
+| Endpoint                     | Method | Description                       |
+| ---------------------------- | ------ | --------------------------------- |
+| `/api/sso/roles`             | GET    | List all roles                    |
+| `/api/sso/roles/{id}`        | GET    | Get role with permissions         |
+| `/api/sso/permissions`       | GET    | List permissions (with filtering) |
+| `/api/sso/permission-matrix` | GET    | Role-permission matrix            |
 
 ### SsoTokenController
 
-| Endpoint | Method | Description |
-|----------|--------|-------------|
-| `/api/sso/tokens` | GET | List user's API tokens |
-| `/api/sso/tokens/{tokenId}` | DELETE | Revoke specific token |
-| `/api/sso/tokens/revoke-others` | POST | Revoke all other tokens |
+| Endpoint                        | Method | Description             |
+| ------------------------------- | ------ | ----------------------- |
+| `/api/sso/tokens`               | GET    | List user's API tokens  |
+| `/api/sso/tokens/{tokenId}`     | DELETE | Revoke specific token   |
+| `/api/sso/tokens/revoke-others` | POST   | Revoke all other tokens |
 
 ### SsoBranchController
 
-| Endpoint | Method | Description |
-|----------|--------|-------------|
-| `/api/sso/branches` | GET | Get user's branches in organization |
+| Endpoint            | Method | Description                         |
+| ------------------- | ------ | ----------------------------------- |
+| `/api/sso/branches` | GET    | Get user's branches in organization |
 
 ### Admin Controllers
 
@@ -1037,13 +1037,13 @@ DELETE /api/admin/sso/users/{userId}/roles/{roleId} # Remove role assignment
 
 ## Caching Strategy
 
-| Cache | Key Pattern | TTL | Description |
-|-------|-------------|-----|-------------|
-| Role Permissions | `sso:role_permissions:{roleSlug}` | 3600s | Permission slugs per role |
-| Team Permissions | `sso:team_permissions:{orgId}` | 3600s | Permission slugs per team |
-| User Teams | `sso:user_teams:{userId}:{orgId}` | 300s | User's teams in org |
-| Organization Access | `sso:org_access:{userId}:{orgSlug}` | 300s | Org access validation |
-| JWKS | `sso:jwks` | 3600s | JSON Web Key Set |
+| Cache               | Key Pattern                         | TTL   | Description               |
+| ------------------- | ----------------------------------- | ----- | ------------------------- |
+| Role Permissions    | `sso:role_permissions:{roleSlug}`   | 3600s | Permission slugs per role |
+| Team Permissions    | `sso:team_permissions:{orgId}`      | 3600s | Permission slugs per team |
+| User Teams          | `sso:user_teams:{userId}:{orgId}`   | 300s  | User's teams in org       |
+| Organization Access | `sso:org_access:{userId}:{orgSlug}` | 300s  | Org access validation     |
+| JWKS                | `sso:jwks`                          | 3600s | JSON Web Key Set          |
 
 ---
 
@@ -1117,10 +1117,10 @@ SSO_LOG_LEVEL=debug
 
 ## Artisan Commands
 
-| Command | Description |
-|---------|-------------|
-| `php artisan sso:install` | Setup wizard for initial installation |
-| `php artisan sso:sync-permissions` | Sync permissions from config into database |
+| Command                                | Description                                       |
+| -------------------------------------- | ------------------------------------------------- |
+| `php artisan sso:install`              | Setup wizard for initial installation             |
+| `php artisan sso:sync-permissions`     | Sync permissions from config into database        |
 | `php artisan sso:cleanup-orphan-teams` | Remove team permissions for deleted Console teams |
 
 ---
@@ -1179,13 +1179,13 @@ Route::middleware(['sso.auth', 'sso.org'])->group(function () {
 
 ## Exceptions
 
-| Exception | HTTP Status | Description |
-|-----------|-------------|-------------|
-| `ConsoleApiException` | 500 | Generic API error |
-| `ConsoleAuthException` | 401 | Authentication failure |
-| `ConsoleAccessDeniedException` | 403 | Authorization failure |
-| `ConsoleNotFoundException` | 404 | Resource not found |
-| `ConsoleServerException` | 500+ | Server error |
+| Exception                      | HTTP Status | Description            |
+| ------------------------------ | ----------- | ---------------------- |
+| `ConsoleApiException`          | 500         | Generic API error      |
+| `ConsoleAuthException`         | 401         | Authentication failure |
+| `ConsoleAccessDeniedException` | 403         | Authorization failure  |
+| `ConsoleNotFoundException`     | 404         | Resource not found     |
+| `ConsoleServerException`       | 500+        | Server error           |
 
 ---
 

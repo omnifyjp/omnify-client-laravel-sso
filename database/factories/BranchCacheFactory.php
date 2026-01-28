@@ -2,9 +2,8 @@
 
 namespace Omnify\SsoClient\Database\Factories;
 
-use Omnify\SsoClient\Models\BranchCache;
 use Illuminate\Database\Eloquent\Factories\Factory;
-
+use Omnify\SsoClient\Models\BranchCache;
 
 /**
  * @extends Factory<BranchCache>
@@ -21,12 +20,12 @@ class BranchCacheFactory extends Factory
     public function definition(): array
     {
         return [
-            'console_branch_id' => fake()->sentence(),
-            'console_org_id' => fake()->sentence(),
+            'console_branch_id' => fake()->uuid(),
+            'console_org_id' => fake()->uuid(),
             'code' => fake()->unique()->regexify('[A-Z0-9]{8}'),
-            'name' => fake()->sentence(3),
-            'is_headquarters' => fake()->boolean(),
-            'is_active' => fake()->boolean(),
+            'name' => fake()->company().' Branch',
+            'is_headquarters' => fake()->boolean(20),
+            'is_active' => true,
         ];
     }
 }
