@@ -35,12 +35,50 @@ class OrgAccessService
                 $accessToken = $this->tokenService->getAccessToken($user);
 
                 if (! $accessToken) {
-                    return null;
+                    // Fallback to local check for local development
+                    return $this->checkAccessLocal($user, $orgId);
                 }
 
                 return $this->consoleApi->getAccess($accessToken, $orgId);
             }
         );
+    }
+
+    /**
+     * Fallback access check for local development when no SSO token available.
+     *
+     * @return array{organization_id: string, organization_slug: string, organization_name: string, org_role: string, service_role: string|null, service_role_level: int}|null
+     */
+    private function checkAccessLocal(Model $user, string $orgId): ?array
+    {
+        // Check if org exists in cache
+        $org = OrganizationCache::where('id', $orgId)
+            ->orWhere('code', $orgId)
+            ->orWhere('name', $orgId)
+            ->first();
+
+        if (! $org) {
+            return null;
+        }
+
+        // For local dev, grant admin access to user's org
+        $userOrgId = $user->console_org_id ?? null;
+
+        // Allow access if:
+        // 1. User's org matches
+        // 2. Or no user org set (super admin mode for dev)
+        if ($userOrgId && $org->id !== $userOrgId && $org->console_org_id !== $userOrgId) {
+            return null;
+        }
+
+        return [
+            'organization_id' => $org->id,
+            'organization_slug' => $org->code ?: $org->name,
+            'organization_name' => $org->name,
+            'org_role' => 'admin',
+            'service_role' => 'admin',
+            'service_role_level' => 100,
+        ];
     }
 
     /**
@@ -53,7 +91,8 @@ class OrgAccessService
         $accessToken = $this->tokenService->getAccessToken($user);
 
         if (! $accessToken) {
-            return [];
+            // Fallback to cached organizations when no token available (for local development)
+            return $this->getCachedOrganizations($user);
         }
 
         $organizations = $this->consoleApi->getOrganizations($accessToken);
@@ -62,6 +101,37 @@ class OrgAccessService
         $this->cacheOrganizations($organizations);
 
         return $organizations;
+    }
+
+    /**
+     * Get organizations from local cache (fallback for local development).
+     *
+     * @return array<array{organization_id: string, organization_slug: string, organization_name: string, org_role: string, service_role: string|null}>
+     */
+    private function getCachedOrganizations(Model $user): array
+    {
+        // If user has a console_org_id, return that org from cache
+        $consoleOrgId = $user->console_org_id ?? null;
+
+        $query = OrganizationCache::query()->where('is_active', true);
+
+        // If user has specific org, prioritize it
+        if ($consoleOrgId) {
+            $query->where(function ($q) use ($consoleOrgId) {
+                $q->where('id', $consoleOrgId)
+                    ->orWhere('console_org_id', $consoleOrgId);
+            });
+        }
+
+        $orgs = $query->get();
+
+        return $orgs->map(fn ($org) => [
+            'organization_id' => $org->id,
+            'organization_slug' => $org->code ?: $org->name,
+            'organization_name' => $org->name,
+            'org_role' => 'admin', // Default for local dev
+            'service_role' => 'admin',
+        ])->all();
     }
 
     /**
