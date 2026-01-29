@@ -126,18 +126,28 @@ class SsoBranchController extends Controller
             return $this->getBranchesFromCache($orgId);
         }
 
-        // Fetch branches from console
-        $result = $this->consoleApi->getUserBranches($accessToken, $orgId);
+        // Fetch branches from console with fallback to cache
+        try {
+            $result = $this->consoleApi->getUserBranches($accessToken, $orgId);
 
-        if ($result === null) {
-            // Fallback to cache if console fails
+            if ($result === null) {
+                // Fallback to cache if console fails
+                return $this->getBranchesFromCache($orgId);
+            }
+
+            // Auto-cache organization and branches
+            $this->cacheOrganizationAndBranches($result);
+
+            return response()->json($result);
+        } catch (\Throwable $e) {
+            // Log error and fallback to cache
+            \Log::warning('Failed to fetch branches from console, using cache', [
+                'error' => $e->getMessage(),
+                'org_id' => $orgId,
+            ]);
+
             return $this->getBranchesFromCache($orgId);
         }
-
-        // Auto-cache organization and branches
-        $this->cacheOrganizationAndBranches($result);
-
-        return response()->json($result);
     }
 
     /**

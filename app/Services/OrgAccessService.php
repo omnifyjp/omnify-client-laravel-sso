@@ -39,7 +39,22 @@ class OrgAccessService
                     return $this->checkAccessLocal($user, $orgId);
                 }
 
-                return $this->consoleApi->getAccess($accessToken, $orgId);
+                // Try console API with fallback to local check
+                try {
+                    $result = $this->consoleApi->getAccess($accessToken, $orgId);
+                    if ($result !== null) {
+                        return $result;
+                    }
+                } catch (\Throwable $e) {
+                    // Log and fallback to local check
+                    \Log::warning('Console API access check failed, using local fallback', [
+                        'error' => $e->getMessage(),
+                        'org_id' => $orgId,
+                    ]);
+                }
+
+                // Fallback to local check
+                return $this->checkAccessLocal($user, $orgId);
             }
         );
     }
